@@ -85,8 +85,9 @@ class SocketHandler {
             log('Error occurred on websocket - $message');
             return;
           case "key_ack":
-            // log('key is acknowledged on websocket - $message');
-            _handleKeyAck(payload, socket);
+            if (keys.isNotEmpty) {
+              _handleKeyAck(payload, socket);
+            }
             return;
           case "register_ack":
             log('register is acknowledged on websocket - $message');
