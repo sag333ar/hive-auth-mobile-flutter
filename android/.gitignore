@@ -1,3 +1,5 @@
+signing.properties
+app/store
 gradle-wrapper.jar
 /.gradle
 /captures/
