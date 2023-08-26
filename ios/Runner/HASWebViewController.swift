@@ -14,6 +14,7 @@ class HASWebViewController: UIViewController {
     let rect = CGRect(x: 0, y: 0, width: 10, height: 10)
     var webView: WKWebView?
     var didFinish = false
+    var getProofOfKeyHandler: ((String) -> Void)? = nil
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,6 +32,18 @@ class HASWebViewController: UIViewController {
         let dir = url.deletingLastPathComponent()
         webView?.loadFileURL(url, allowingReadAccessTo: dir)
     }
+
+    func getProofOfKey(
+        privateKey: String,
+        publicKey: String,
+        memo: String,
+        handler: @escaping (String) -> Void
+    ) {
+        getProofOfKeyHandler = handler
+        OperationQueue.main.addOperation {
+            self.webView?.evaluateJavaScript("getProofOfKey('\(privateKey)', '\(publicKey)', '\(memo)');")
+        }
+    }
 }
 
 extension HASWebViewController: WKNavigationDelegate {
@@ -47,9 +60,13 @@ extension HASWebViewController: WKScriptMessageHandler {
         guard message.name == hiveauthsigner else { return }
         guard let dict = message.body as? [String: AnyObject] else { return }
         guard let type = dict["type"] as? String else { return }
+        guard let error = dict["error"] as? String else { return }
+        guard let data = dict["data"] as? String else { return }
+        guard let jsonData = try? JSONEncoder().encode(["error": error, "data": data]) else { return }
+        guard let jsonString = String(data: jsonData, encoding: .utf8) else { return }
         switch type {
-            case "keys":
-                debugPrint("Keys")
+            case "getProofOfKey":
+                getProofOfKeyHandler?(jsonString)
             default:
                 debugPrint("Do nothing")
         }

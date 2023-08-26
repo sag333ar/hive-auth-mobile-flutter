@@ -6,6 +6,29 @@
     <title>HiveAuthSigner</title>
   </head>
   <body>HiveAuthSigner</body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.1.0/uuidv4.min.js"></script>
+  <script
+          src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"
+          integrity="sha512-E8QSvWZ0eCLGk4km3hxSsNmGWbLtSCSUcewDQPQWZF6pEU8GlT8a5fF32wOl1i8ftdMhssTrF/OhyGWwonTcXA=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"
+  ></script>
+  <script src="https://cdn.jsdelivr.net/npm/@hiveio/hive-js/dist/hive.min.js"></script>
   <script>
+    function getProofOfKey(privateKey, publicKey, memo) {
+      const proofOfKey = hive.memo.encode(privateKey, publicKey, `#${memo}`);
+      replyToNative({
+        type: "getProofOfKey",
+        error: "",
+        data: proofOfKey,
+      });
+    }
+
+    function replyToNative(result) {
+      console.log(`Result is ${JSON.stringify(result)}`);
+      window.webkit.messageHandlers.hiveauthsigner.postMessage(result);
+        // Android.postMessage(JSON.stringify(result));
+    }
   </script>
 </html>

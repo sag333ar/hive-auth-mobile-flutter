@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hiveauthsigner/app/hiveauthsignerapp.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
+import 'package:hiveauthsigner/socket/signer_keys.dart';
 import 'package:hiveauthsigner/socket/socket_handler.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
@@ -90,6 +91,19 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> loadData() async {
     var hasWsServer = dotenv.env['HAS_SERVER'] ?? 'wss://hive-auth.arcange.eu';
+    var postingKey = dotenv.env['POSTING_KEY'] ?? '';
+    var postingPublicKey = dotenv.env['POSTING_PUBLIC_KEY'] ?? '';
+    handler.keys = [
+      SignerKeysModel(
+        name: 'shaktimaaan',
+        posting: postingKey,
+        postingPublic: postingPublicKey,
+        active: null,
+        activePublic: null,
+        memo: null,
+        memoPublic: null,
+      ),
+    ];
     startSocket(hasWsServer);
     const storage = FlutterSecureStorage();
     String? appPinHash = await storage.read(key: 'app_pin_hash');

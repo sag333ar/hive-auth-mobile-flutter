@@ -3,14 +3,8 @@ import 'dart:async';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
 
 class HiveAuthData {
-  final String websocket = "https://3speak.tv";
-
   String userOwnerThumb(String value) {
     return "https://images.hive.blog/u/$value/avatar";
-  }
-
-  String userChannelCover(String value) {
-    return "https://img.3speakcontent.co/user/$value/cover.png";
   }
 
   String communityIcon(String value) {
