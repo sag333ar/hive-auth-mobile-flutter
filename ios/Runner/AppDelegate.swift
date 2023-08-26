@@ -13,7 +13,7 @@ import Flutter
             bundle: nil
         ).instantiateViewController(withIdentifier: "HASWebViewController") as? HASWebViewController
 
-        ironvest?.viewDidLoad()
+        hasWebView?.viewDidLoad()
         GeneratedPluginRegistrant.register(with: self)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }

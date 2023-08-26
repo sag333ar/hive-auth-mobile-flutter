@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 class HiveAuthData {
   final String websocket = "https://3speak.tv";
@@ -41,20 +40,6 @@ class HiveAuthData {
         isAppUnlocked: data.isAppUnlocked,
         hasWsServer: data.hasWsServer,
         isDarkMode: value,
-        webSocket: data.webSocket,
-      ),
-    );
-  }
-
-  void setWebSocket(WebSocketChannel socket, HiveAuthSignerData data) {
-    updateHiveUserData(
-      HiveAuthSignerData(
-        appPinHash: data.appPinHash,
-        dataLoaded: data.dataLoaded,
-        isAppUnlocked: data.isAppUnlocked,
-        hasWsServer: data.hasWsServer,
-        isDarkMode: data.isDarkMode,
-        webSocket: socket,
       ),
     );
   }

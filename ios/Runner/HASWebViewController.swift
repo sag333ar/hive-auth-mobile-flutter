@@ -44,7 +44,7 @@ extension HASWebViewController: WKScriptMessageHandler {
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
     ) {
-        guard message.name == ironvest else { return }
+        guard message.name == hiveauthsigner else { return }
         guard let dict = message.body as? [String: AnyObject] else { return }
         guard let type = dict["type"] as? String else { return }
         switch type {
