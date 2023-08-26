@@ -2,6 +2,7 @@ import 'dart:core';
 import 'dart:developer';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 
@@ -71,7 +72,9 @@ class SocketHandler {
   }
 
   void handleMessage(String message, WebSocketChannel socket) {
-    // log('Message received on socket - $message');
+    if (kDebugMode) {
+      log('Message received on socket - $message');
+    }
     try {
       var payload = json.decode(message) as Map<String, dynamic>;
       var cmd = payload["cmd"] as String?;
@@ -138,7 +141,9 @@ class SocketHandler {
   }
 
   void hasSend(String message, WebSocketChannel socket) {
-    // log('Sending message via socket - $message');
+    if (kDebugMode) {
+      log('Sending message via socket - $message');
+    }
     socket.sink.add(message);
   }
 }
