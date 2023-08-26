@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hiveauthsigner/app/hiveauthsignerapp.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
+import 'package:hiveauthsigner/socket/socket_handler.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -20,6 +21,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   late final Future<void> _futureToLoadData;
   late WebSocketChannel socket;
+  SocketHandler handler = SocketHandler();
 
   Widget futureBuilder(Widget withWidget) {
     return FutureBuilder(
@@ -76,7 +78,7 @@ class _MyAppState extends State<MyApp> {
       Uri.parse(hasWsServer),
     );
     socket.stream.listen((message) {
-      log('Message received - $message');
+      handler.handleMessage(message, socket);
     });
   }
 
