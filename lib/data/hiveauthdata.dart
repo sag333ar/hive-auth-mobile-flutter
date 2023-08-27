@@ -1,8 +1,13 @@
 import 'dart:async';
 
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
+import 'package:hiveauthsigner/socket/socket_handler.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class HiveAuthData {
+  SocketHandler handler = SocketHandler();
+  late WebSocketChannel socket;
+
   String userOwnerThumb(String value) {
     return "https://images.hive.blog/u/$value/avatar";
   }
@@ -36,6 +41,15 @@ class HiveAuthData {
         isDarkMode: value,
       ),
     );
+  }
+
+  void startSocket(String hasWsServer) {
+    socket = WebSocketChannel.connect(
+      Uri.parse(hasWsServer),
+    );
+    socket.stream.listen((message) {
+      handler.handleMessage(message, socket);
+    });
   }
 }
 

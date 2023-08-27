@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,10 +5,8 @@ import 'package:hiveauthsigner/app/hiveauthsignerapp.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
 import 'package:hiveauthsigner/socket/signer_keys.dart';
-import 'package:hiveauthsigner/socket/socket_handler.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -21,8 +17,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final Future<void> _futureToLoadData;
-  late WebSocketChannel socket;
-  SocketHandler handler = SocketHandler();
 
   Widget futureBuilder(Widget withWidget) {
     return FutureBuilder(
@@ -74,15 +68,6 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  void startSocket(String hasWsServer) {
-    socket = WebSocketChannel.connect(
-      Uri.parse(hasWsServer),
-    );
-    socket.stream.listen((message) {
-      handler.handleMessage(message, socket);
-    });
-  }
-
   @override
   void initState() {
     super.initState();
@@ -93,7 +78,7 @@ class _MyAppState extends State<MyApp> {
     var hasWsServer = dotenv.env['HAS_SERVER'] ?? 'wss://hive-auth.arcange.eu';
     var postingKey = dotenv.env['POSTING_KEY'] ?? '';
     var postingPublicKey = dotenv.env['POSTING_PUBLIC_KEY'] ?? '';
-    handler.keys = [
+    hiveAuthData.handler.keys = [
       SignerKeysModel(
         name: 'shaktimaaan',
         posting: postingKey,
@@ -104,7 +89,7 @@ class _MyAppState extends State<MyApp> {
         memoPublic: null,
       ),
     ];
-    startSocket(hasWsServer);
+    hiveAuthData.startSocket(hasWsServer);
     const storage = FlutterSecureStorage();
     String? appPinHash = await storage.read(key: 'app_pin_hash');
     hiveAuthData.updateHiveUserData(
