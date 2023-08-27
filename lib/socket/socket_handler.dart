@@ -2,13 +2,17 @@ import 'dart:core';
 import 'dart:developer';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:hiveauthsigner/data/hiveauthdata.dart';
+import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
 import 'dart:convert';
 
 import 'package:hiveauthsigner/socket/account_auth.dart';
 import 'package:hiveauthsigner/socket/bridge_response.dart';
 import 'package:hiveauthsigner/socket/signer_keys.dart';
+import 'package:provider/provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class SocketHandler {
@@ -71,7 +75,12 @@ class SocketHandler {
     }
   }
 
-  void handleMessage(String message, WebSocketChannel socket, List<SignerKeysModel> newKeys) {
+  void handleMessage(
+    String message,
+    WebSocketChannel socket,
+    List<SignerKeysModel> newKeys,
+    Function? handleKeysAck,
+  ) {
     keys = newKeys;
     if (kDebugMode) {
       log('Message received on socket - $message');
@@ -89,6 +98,9 @@ class SocketHandler {
             log('Error occurred on websocket - $message');
             return;
           case "key_ack":
+            if (handleKeysAck != null) {
+              handleKeysAck();
+            }
             if (keys.isNotEmpty) {
               _handleKeyAck(payload, socket);
             }

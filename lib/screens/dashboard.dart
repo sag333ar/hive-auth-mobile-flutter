@@ -21,6 +21,7 @@ class WelcomeScreen extends StatefulWidget {
 class _WelcomeScreenState extends State<WelcomeScreen> {
   var isDarkMode = false;
   var didSendInitialSocketRequest = false;
+  var keyAck = false;
 
   @override
   void initState() {
@@ -114,6 +115,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       leading: const Icon(Icons.lock),
       title: const Text("Lock App"),
       onTap: () {
+        hiveAuthData.setKeyAck(false, widget.data);
         var screen = PinLockScreen(data: widget.data);
         var route = MaterialPageRoute(builder: (c) => screen);
         Navigator.of(context).pushReplacement(route);
@@ -162,15 +164,24 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       didSendInitialSocketRequest = true;
     });
     if (data.mp != null) {
+      setState(() {
+        keyAck = false;
+      });
       var ks = await hiveAuthData.pinStorageManager.getKeys(data.mp!);
-      hiveAuthData.startSocket(widget.data.hasWsServer, ks);
+      setState(() {
+        hiveAuthData.startSocket(data.hasWsServer, ks, () {
+          setState(() {
+            keyAck = true;
+          });
+        });
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     var data = Provider.of<HiveAuthSignerData>(context);
-    if (didSendInitialSocketRequest) {
+    if (!didSendInitialSocketRequest) {
       reconnectSockets(data);
     }
     return Scaffold(
@@ -186,9 +197,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           subtitle: const Text('Dashboard'),
         ),
         actions: [
+          Icon(
+            Icons.public,
+            color: keyAck ? Colors.green : Colors.grey,
+          ),
           IconButton(
             icon: const Icon(Icons.lock),
             onPressed: () {
+              hiveAuthData.setKeyAck(false, widget.data);
               var screen = PinLockScreen(data: widget.data);
               var route = MaterialPageRoute(builder: (c) => screen);
               Navigator.of(context).pushReplacement(route);
@@ -203,7 +219,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         onPressed: () {
           reconnectSockets(data);
         },
-        child: const Icon(Icons.refresh),
+        child: const Icon(
+          Icons.refresh,
+          color: Colors.white,
+        ),
       ),
     );
   }

@@ -47,6 +47,7 @@ class HiveAuthData {
         hasWsServer: data.hasWsServer,
         isDarkMode: value,
         mp: data.mp,
+        keyAck: data.keyAck,
       ),
     );
   }
@@ -60,6 +61,7 @@ class HiveAuthData {
         hasWsServer: data.hasWsServer,
         isDarkMode: data.isDarkMode,
         mp: data.mp,
+        keyAck: data.keyAck,
       ),
     );
   }
@@ -73,6 +75,7 @@ class HiveAuthData {
         hasWsServer: data.hasWsServer,
         isDarkMode: data.isDarkMode,
         mp: data.mp,
+        keyAck: data.keyAck,
       ),
     );
   }
@@ -86,16 +89,35 @@ class HiveAuthData {
         hasWsServer: data.hasWsServer,
         isDarkMode: data.isDarkMode,
         mp: mp,
+        keyAck: data.keyAck,
       ),
     );
   }
 
-  void startSocket(String hasWsServer, List<SignerKeysModel> newKeys) {
+  void setKeyAck(bool value, HiveAuthSignerData data) {
+    updateHiveUserData(
+      HiveAuthSignerData(
+        doWeHaveSecurePin: data.doWeHaveSecurePin,
+        dataLoaded: data.dataLoaded,
+        isAppUnlocked: data.isAppUnlocked,
+        hasWsServer: data.hasWsServer,
+        isDarkMode: data.isDarkMode,
+        mp: data.mp,
+        keyAck: value,
+      ),
+    );
+  }
+
+  void startSocket(
+    String hasWsServer,
+    List<SignerKeysModel> newKeys,
+    Function? handleKeysAck,
+  ) {
     socket = WebSocketChannel.connect(
       Uri.parse(hasWsServer),
     );
     socket.stream.listen((message) {
-      handler.handleMessage(message, socket, newKeys);
+      handler.handleMessage(message, socket, newKeys, handleKeysAck);
     });
   }
 }
