@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get_secure_storage/get_secure_storage.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
 import 'package:hiveauthsigner/screens/drawer_screen.dart';
@@ -103,7 +102,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
         shouldEnable = false;
       }
     }
-    if (widget.data.appPinHash == null) {
+    if (widget.data.doWeHaveSecurePin == false) {
       var reEnteredPin = rePinText.trim();
       if (shouldEnable) {
         shouldEnable = reEnteredPin == enteredPin;
@@ -112,11 +111,13 @@ class _PinLockScreenState extends State<PinLockScreen> {
     return ElevatedButton(
       onPressed: shouldEnable
           ? () async {
-              if (widget.data.appPinHash == null) {
-                await hiveAuthData.pinStorageManager.updatePinHash(enteredPin);
-                hiveAuthData.updatePin(enteredPin, widget.data);
+              if (widget.data.doWeHaveSecurePin == false) {
+                await hiveAuthData.pinStorageManager.setSecurePin(enteredPin);
+                hiveAuthData.updatePin(true, widget.data);
               } else {
-                if (widget.data.appPinHash == enteredPin) {
+                var result = await hiveAuthData.pinStorageManager
+                    .validatePin(enteredPin);
+                if (result) {
                   showError('VALID PIN entered. Let us go.');
                 } else {
                   showError('Incorrect PIN entered.');
@@ -124,7 +125,9 @@ class _PinLockScreenState extends State<PinLockScreen> {
               }
             }
           : null,
-      child: const Text('Unlock'),
+      child: Text(
+        widget.data.doWeHaveSecurePin == false ? 'Set App Pin' : 'Unlock',
+      ),
     );
   }
 
@@ -161,7 +164,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
   }
 
   Widget _withBio() {
-    if (widget.data.appPinHash == null) {
+    if (widget.data.doWeHaveSecurePin == false) {
       return _noPinSet();
     } else {
       return _pinSet();

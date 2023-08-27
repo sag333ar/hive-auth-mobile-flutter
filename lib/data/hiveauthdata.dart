@@ -40,7 +40,7 @@ class HiveAuthData {
   void setDarkMode(bool value, HiveAuthSignerData data) {
     updateHiveUserData(
       HiveAuthSignerData(
-        appPinHash: data.appPinHash,
+        doWeHaveSecurePin: data.doWeHaveSecurePin,
         dataLoaded: data.dataLoaded,
         isAppUnlocked: data.isAppUnlocked,
         hasWsServer: data.hasWsServer,
@@ -49,10 +49,10 @@ class HiveAuthData {
     );
   }
 
-  void updatePin(String newPin, HiveAuthSignerData data) {
+  void updatePin(bool isPinSet, HiveAuthSignerData data) {
     updateHiveUserData(
       HiveAuthSignerData(
-        appPinHash: newPin,
+        doWeHaveSecurePin: isPinSet,
         dataLoaded: data.dataLoaded,
         isAppUnlocked: data.isAppUnlocked,
         hasWsServer: data.hasWsServer,

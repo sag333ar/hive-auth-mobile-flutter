@@ -55,7 +55,7 @@ class _MyAppState extends State<MyApp> {
         StreamProvider<HiveAuthSignerData>.value(
           value: hiveAuthData.hiveAuthSignerData,
           initialData: HiveAuthSignerData(
-            appPinHash: null,
+            doWeHaveSecurePin: false,
             dataLoaded: false,
             isAppUnlocked: false,
             hasWsServer: "wss://hive-auth.arcange.eu",
@@ -89,10 +89,11 @@ class _MyAppState extends State<MyApp> {
       ),
     ];
     hiveAuthData.startSocket(hasWsServer);
-    String? appPinHash = await hiveAuthData.pinStorageManager.appPinHash();
+    bool isPinStored =
+        await hiveAuthData.pinStorageManager.doWeHaveSecurePinStored();
     hiveAuthData.updateHiveUserData(
       HiveAuthSignerData(
-        appPinHash: appPinHash,
+        doWeHaveSecurePin: isPinStored,
         dataLoaded: true,
         isAppUnlocked: false,
         hasWsServer: hasWsServer,
