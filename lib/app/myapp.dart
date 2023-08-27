@@ -75,7 +75,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> loadData() async {
     var hasWsServer = dotenv.env['HAS_SERVER'] ?? 'wss://hive-auth.arcange.eu';
-    hiveAuthData.startSocket(hasWsServer);
+    hiveAuthData.startSocket(hasWsServer, []);
     bool isPinStored =
         await hiveAuthData.pinStorageManager.doWeHaveSecurePinStored();
     hiveAuthData.updateHiveUserData(

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
-import 'package:hiveauthsigner/screens/drawer_screen.dart';
 import 'package:hiveauthsigner/screens/import_keys.dart';
+import 'package:hiveauthsigner/screens/manage_keys.dart';
 import 'package:hiveauthsigner/screens/pinlock_screen.dart';
+import 'package:provider/provider.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({
@@ -19,6 +20,7 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
   var isDarkMode = false;
+  var didSendInitialSocketRequest = false;
 
   @override
   void initState() {
@@ -79,7 +81,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return ListTile(
       leading: const Icon(Icons.key_sharp),
       title: const Text("Manage Keys"),
-      onTap: () async {},
+      onTap: () {
+        var screen = const ManageKeysScreen();
+        var route = MaterialPageRoute(builder: (c) => screen);
+        Navigator.of(context).push(route);
+      },
     );
   }
 
@@ -90,7 +96,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       onTap: () {
         var screen = const ImportKeysScreen();
         var route = MaterialPageRoute(builder: (c) => screen);
-        Navigator.of(context).pushReplacement(route);
+        Navigator.of(context).push(route);
       },
     );
   }
@@ -151,8 +157,22 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
+  void reconnectSockets(HiveAuthSignerData data) async {
+    setState(() {
+      didSendInitialSocketRequest = true;
+    });
+    if (data.mp != null) {
+      var ks = await hiveAuthData.pinStorageManager.getKeys(data.mp!);
+      hiveAuthData.startSocket(widget.data.hasWsServer, ks);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    var data = Provider.of<HiveAuthSignerData>(context);
+    if (didSendInitialSocketRequest) {
+      reconnectSockets(data);
+    }
     return Scaffold(
       appBar: AppBar(
         centerTitle: false,
@@ -162,7 +182,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             width: 40,
             height: 40,
           ),
-          title: const Text('Dashboard'),
+          title: const Text('Auth Signer'),
+          subtitle: const Text('Dashboard'),
         ),
         actions: [
           IconButton(
@@ -170,13 +191,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             onPressed: () {
               var screen = PinLockScreen(data: widget.data);
               var route = MaterialPageRoute(builder: (c) => screen);
-              Navigator.of(context).push(route);
+              Navigator.of(context).pushReplacement(route);
             },
           ),
         ],
       ),
       body: SafeArea(
         child: _dashboardMenu(),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          reconnectSockets(data);
+        },
+        child: const Icon(Icons.refresh),
       ),
     );
   }

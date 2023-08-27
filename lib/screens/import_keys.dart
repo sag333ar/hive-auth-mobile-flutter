@@ -147,17 +147,17 @@ class _ImportKeysScreenState extends State<ImportKeysScreen> {
                 existingKeys[i].posting = enteredKey;
                 didUpdate = true;
                 messageToShow =
-                    '$enteredUserName\'s private memo key was updated';
+                    '$enteredUserName\'s private posting key was imported';
               } else if (bridgeResponse.data == 'active') {
                 existingKeys[i].active = enteredKey;
                 didUpdate = true;
                 messageToShow =
-                    '$enteredUserName\'s private active key was updated';
+                    '$enteredUserName\'s private active key was imported';
               } else if (bridgeResponse.data == 'memo') {
                 existingKeys[i].memo = enteredKey;
                 didUpdate = true;
                 messageToShow =
-                    '$enteredUserName\'s private memo key was updated';
+                    '$enteredUserName\'s private memo key was imported';
               } else {
                 showError('Unknown key type found.');
               }
@@ -196,6 +196,7 @@ class _ImportKeysScreenState extends State<ImportKeysScreen> {
           showError('Please Enter valid hive private key');
           return;
         }
+        validateKey(data);
       },
       child: const Text('Import Key'),
     );
@@ -221,7 +222,8 @@ class _ImportKeysScreenState extends State<ImportKeysScreen> {
             width: 40,
             height: 40,
           ),
-          title: const Text('Import Keys'),
+          title: const Text('Auth Signer'),
+          subtitle: const Text('Import Keys'),
         ),
       ),
       body: checking ? _loading() : _form(data),

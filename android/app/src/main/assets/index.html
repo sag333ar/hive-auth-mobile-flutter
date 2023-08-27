@@ -25,16 +25,16 @@
       });
     }
 
-    function validateHiveKey(accountName, userKey) {
+    function validateHiveKey(account, userKey) {
       console.log("In here before async");
       hive.api
-        .getAccountsAsync([accountName])
+        .getAccountsAsync([account])
         .then(function (accounts) {
           console.log("In here after async");
           console.log("Accounts: ", accounts);
           const publicPosting = accounts[0].posting.key_auths[0][0];
-          const publicActive = account[0].active.key_auths[0][0];
-          const publicMemo = account[0].memo_key;
+          const publicActive = accounts[0].active.key_auths[0][0];
+          const publicMemo = accounts[0].memo_key;
           const isItPostingKey = hive.auth.wifIsValid(userKey, publicPosting);
           const isItActiveKey = hive.auth.wifIsValid(userKey, publicActive);
           const isItMemoKey = hive.auth.wifIsValid(userKey, publicMemo);

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
+import 'package:hiveauthsigner/socket/signer_keys.dart';
 import 'package:hiveauthsigner/socket/socket_handler.dart';
 import 'package:hiveauthsigner/utilities/storage.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -89,12 +90,12 @@ class HiveAuthData {
     );
   }
 
-  void startSocket(String hasWsServer) {
+  void startSocket(String hasWsServer, List<SignerKeysModel> newKeys) {
     socket = WebSocketChannel.connect(
       Uri.parse(hasWsServer),
     );
     socket.stream.listen((message) {
-      handler.handleMessage(message, socket);
+      handler.handleMessage(message, socket, newKeys);
     });
   }
 }

@@ -71,7 +71,8 @@ class SocketHandler {
     }
   }
 
-  void handleMessage(String message, WebSocketChannel socket) {
+  void handleMessage(String message, WebSocketChannel socket, List<SignerKeysModel> newKeys) {
+    keys = newKeys;
     if (kDebugMode) {
       log('Message received on socket - $message');
     }
