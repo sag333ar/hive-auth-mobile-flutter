@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
+import 'package:hiveauthsigner/screens/dashboard.dart';
 import 'package:hiveauthsigner/screens/drawer_screen.dart';
 
 class PinLockScreen extends StatefulWidget {
@@ -69,6 +70,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
         hintText: 'Enter 6-Digit App Unlock Pin here',
       ),
       obscureText: true,
+      keyboardType: TextInputType.number,
       onChanged: (value) {
         setState(() {
           pinText = value;
@@ -85,6 +87,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
         hintText: 'RE-Enter 6-Digit App Unlock Pin here',
       ),
       obscureText: true,
+      keyboardType: TextInputType.number,
       onChanged: (value) {
         setState(() {
           rePinText = value;
@@ -109,16 +112,26 @@ class _PinLockScreenState extends State<PinLockScreen> {
       }
     }
     return ElevatedButton(
+      style: ButtonStyle(
+        backgroundColor: MaterialStateProperty.all(Colors.red[800]),
+      ),
       onPressed: shouldEnable
           ? () async {
               if (widget.data.doWeHaveSecurePin == false) {
                 await hiveAuthData.pinStorageManager.setSecurePin(enteredPin);
-                hiveAuthData.updatePin(true, widget.data);
+                hiveAuthData.setPin(true, widget.data);
+                hiveAuthData.setLockUnlockApp(true, widget.data);
               } else {
                 var result = await hiveAuthData.pinStorageManager
                     .validatePin(enteredPin);
                 if (result) {
-                  showError('VALID PIN entered. Let us go.');
+                  hiveAuthData.setLockUnlockApp(true, widget.data);
+                  showMessage('Auth Signer App unlocked.');
+                  setState(() {
+                    var screen = WelcomeScreen(data: widget.data);
+                    var route = MaterialPageRoute(builder: (c) => screen);
+                    Navigator.of(context).pushReplacement(route);
+                  });
                 } else {
                   showError('Incorrect PIN entered.');
                 }
@@ -176,6 +189,11 @@ class _PinLockScreenState extends State<PinLockScreen> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  void showMessage(String string) async {
+    var snackBar = SnackBar(content: Text(string));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -196,7 +214,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
           : canWeDoBioScan == false
               ? _noBio()
               : _withBio(),
-      drawer: DrawerScreen(data: widget.data),
+      // drawer: DrawerScreen(data: widget.data),
       // floatingActionButton: FloatingActionButton(
       //   onPressed: () {
       //     hiveAuthData.startSocket(widget.data.hasWsServer);

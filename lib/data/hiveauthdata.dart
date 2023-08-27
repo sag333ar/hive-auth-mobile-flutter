@@ -49,7 +49,19 @@ class HiveAuthData {
     );
   }
 
-  void updatePin(bool isPinSet, HiveAuthSignerData data) {
+  void setLockUnlockApp(bool value, HiveAuthSignerData data) {
+    updateHiveUserData(
+      HiveAuthSignerData(
+        doWeHaveSecurePin: data.doWeHaveSecurePin,
+        dataLoaded: data.dataLoaded,
+        isAppUnlocked: value,
+        hasWsServer: data.hasWsServer,
+        isDarkMode: data.isDarkMode,
+      ),
+    );
+  }
+
+  void setPin(bool isPinSet, HiveAuthSignerData data) {
     updateHiveUserData(
       HiveAuthSignerData(
         doWeHaveSecurePin: isPinSet,

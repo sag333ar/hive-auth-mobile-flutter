@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
+import 'package:hiveauthsigner/screens/drawer_screen.dart';
 
-class DrawerScreen extends StatefulWidget {
-  const DrawerScreen({
+class WelcomeScreen extends StatefulWidget {
+  const WelcomeScreen({
     super.key,
     required this.data,
   });
@@ -11,10 +12,10 @@ class DrawerScreen extends StatefulWidget {
   final HiveAuthSignerData data;
 
   @override
-  State<DrawerScreen> createState() => _DrawerScreenState();
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _DrawerScreenState extends State<DrawerScreen> {
+class _WelcomeScreenState extends State<WelcomeScreen> {
 
   Widget _drawerHeader() {
     return DrawerHeader(
@@ -126,10 +127,9 @@ class _DrawerScreenState extends State<DrawerScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    var defaultItems = [
-      _drawerHeader(),
-      _changeTheme(),
+  Widget _menu() {
+    List<Widget> defaultItems = [
+      // _drawerHeader(),
     ];
     if (widget.data.isAppUnlocked == true) {
       defaultItems.add(_viewAccounts());
@@ -140,13 +140,89 @@ class _DrawerScreenState extends State<DrawerScreen> {
     defaultItems.add(_about());
     defaultItems.add(_settings());
     if (widget.data.isAppUnlocked == true) {
-      defaultItems.add(_lock());
+      defaultItems.add(_changeTheme());
     }
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: defaultItems,
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: defaultItems,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: false,
+        title: ListTile(
+          leading: Image.asset(
+            'assets/app-icon.png',
+            width: 40,
+            height: 40,
+          ),
+          title: const Text('Dashboard'),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.lock),
+            onPressed: () {},
+          ),
+        ],
       ),
+      body: SafeArea(
+        child: _menu(),
+      ),
+      // drawer: DrawerScreen(data: widget.data),
     );
   }
 }
+
+/*
+Column(
+          children: [
+            const Spacer(),
+            Text(
+              'Welcome to Hive Auth Signer.\nPlease choose an action.',
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 30),
+            Row(
+              children: [
+                const Spacer(),
+                ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.group),
+                  label: const Text('View Accounts'),
+                ),
+                const SizedBox(width: 30),
+                ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.key),
+                  label: const Text('Manage Keys'),
+                ),
+                const Spacer(),
+              ],
+            ),
+            const SizedBox(height: 30),
+            Row(
+              children: [
+                const Spacer(),
+                ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.add_box_outlined),
+                  label: const Text('Import Keys'),
+                ),
+                const SizedBox(width: 30),
+                ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.qr_code),
+                  label: const Text('Scan QR Code'),
+                ),
+                const Spacer(),
+              ],
+            ),
+            const SizedBox(height: 30),
+            const Spacer(),
+          ],
+        ),
+ */
