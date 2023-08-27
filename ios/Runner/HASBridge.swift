@@ -39,6 +39,16 @@ class HASBridge {
                         return
                     }
                     self?.getProofOfKey(privateKey: privateKey, publicKey: publicKey, memo: memo, result: result)
+                case "validateHiveKey":
+                    guard
+                        let arguments = call.arguments as? NSDictionary,
+                        let accountName = arguments ["accountName"] as? String,
+                        let userKey = arguments ["userKey"] as? String
+                    else {
+                        result(FlutterMethodNotImplemented)
+                        return
+                    }
+                self?.validateHiveKey(accountName: accountName, userKey: userKey, result: result)
                 default:
                     debugPrint("do nothing")
             }
@@ -56,6 +66,20 @@ class HASBridge {
             return
         }
         hasWeb.getProofOfKey(privateKey: privateKey, publicKey: publicKey, memo: memo) { response in
+            result(response)
+        }
+    }
+
+    private func validateHiveKey(
+        accountName: String,
+        userKey: String,
+        result: @escaping FlutterResult
+    ) {
+        guard let hasWeb = hasWeb else {
+            result(FlutterError(code: "ERROR", message: "Error setting up HASBridge", details: nil))
+            return
+        }
+        hasWeb.validateHiveKey(accountName: accountName, userKey: userKey) { response in
             result(response)
         }
     }

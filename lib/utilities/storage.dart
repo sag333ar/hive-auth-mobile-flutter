@@ -1,9 +1,14 @@
+import 'dart:convert';
+
 import 'package:biometric_storage/biometric_storage.dart';
+import 'package:encryptor/encryptor.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hiveauthsigner/socket/signer_keys.dart';
 
 class HASPinStorageManager {
   final String _appPin = 'app_pin';
   final String _doWeHaveSecurePin = 'do_we_have_secure_pin';
+  final String _appKeys = 'app_keys';
   final _storage = const FlutterSecureStorage();
 
   Future<bool> hasBiometrics() async {
@@ -41,5 +46,24 @@ class HASPinStorageManager {
     final pinHashFile = await MethodChannelBiometricStorage().getStorage(_appPin);
     await _storage.write(key: _doWeHaveSecurePin, value: 'true');
     await pinHashFile.write(value, promptInfo: const PromptInfo());
+  }
+
+  Future<List<SignerKeysModel>> getKeys(String mp) async {
+    String value = await _storage.read(key: _appKeys) ?? "";
+    if (value.isEmpty) {
+      return [];
+    }
+    try {
+      var decrypted = Encryptor.decrypt(mp, value);
+      return SignerKeysModel.fromRawJson(decrypted);
+    } catch(e) {
+      return [];
+    }
+  }
+
+  Future<void> updateKeys(String mp, List<SignerKeysModel> keys) async {
+    var string = json.encode(keys);
+    var encrypted = Encryptor.encrypt(mp, string);
+    await _storage.write(key: _appKeys, value: encrypted);
   }
 }

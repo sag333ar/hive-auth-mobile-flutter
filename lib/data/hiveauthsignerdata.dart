@@ -4,6 +4,7 @@ class HiveAuthSignerData {
   bool isAppUnlocked;
   String hasWsServer;
   bool isDarkMode;
+  String? mp;
 
   HiveAuthSignerData({
     required this.doWeHaveSecurePin,
@@ -11,5 +12,6 @@ class HiveAuthSignerData {
     required this.isAppUnlocked,
     required this.hasWsServer,
     required this.isDarkMode,
+    required this.mp,
   });
 }

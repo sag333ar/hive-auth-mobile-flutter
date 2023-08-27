@@ -45,6 +45,7 @@ class HiveAuthData {
         isAppUnlocked: data.isAppUnlocked,
         hasWsServer: data.hasWsServer,
         isDarkMode: value,
+        mp: data.mp,
       ),
     );
   }
@@ -57,6 +58,7 @@ class HiveAuthData {
         isAppUnlocked: value,
         hasWsServer: data.hasWsServer,
         isDarkMode: data.isDarkMode,
+        mp: data.mp,
       ),
     );
   }
@@ -69,6 +71,20 @@ class HiveAuthData {
         isAppUnlocked: data.isAppUnlocked,
         hasWsServer: data.hasWsServer,
         isDarkMode: data.isDarkMode,
+        mp: data.mp,
+      ),
+    );
+  }
+
+  void setMp(String mp, HiveAuthSignerData data) {
+    updateHiveUserData(
+      HiveAuthSignerData(
+        doWeHaveSecurePin: data.doWeHaveSecurePin,
+        dataLoaded: data.dataLoaded,
+        isAppUnlocked: data.isAppUnlocked,
+        hasWsServer: data.hasWsServer,
+        isDarkMode: data.isDarkMode,
+        mp: mp,
       ),
     );
   }

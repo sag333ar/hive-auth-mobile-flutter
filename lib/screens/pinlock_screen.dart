@@ -96,6 +96,12 @@ class _PinLockScreenState extends State<PinLockScreen> {
     );
   }
 
+  void navigateToDashboard() {
+    var screen = WelcomeScreen(data: widget.data);
+    var route = MaterialPageRoute(builder: (c) => screen);
+    Navigator.of(context).pushReplacement(route);
+  }
+
   Widget _submitButton() {
     var enteredPin = pinText.trim();
     var shouldEnable = enteredPin.length == 6;
@@ -121,16 +127,19 @@ class _PinLockScreenState extends State<PinLockScreen> {
                 await hiveAuthData.pinStorageManager.setSecurePin(enteredPin);
                 hiveAuthData.setPin(true, widget.data);
                 hiveAuthData.setLockUnlockApp(true, widget.data);
+                hiveAuthData.setMp(enteredPin, widget.data);
+                setState(() {
+                  navigateToDashboard();
+                });
               } else {
                 var result = await hiveAuthData.pinStorageManager
                     .validatePin(enteredPin);
                 if (result) {
                   hiveAuthData.setLockUnlockApp(true, widget.data);
+                  hiveAuthData.setMp(enteredPin, widget.data);
                   showMessage('Auth Signer App unlocked.');
                   setState(() {
-                    var screen = WelcomeScreen(data: widget.data);
-                    var route = MaterialPageRoute(builder: (c) => screen);
-                    Navigator.of(context).pushReplacement(route);
+                    navigateToDashboard();
                   });
                 } else {
                   showError('Incorrect PIN entered.');

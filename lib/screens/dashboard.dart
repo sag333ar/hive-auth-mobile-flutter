@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
 import 'package:hiveauthsigner/screens/drawer_screen.dart';
+import 'package:hiveauthsigner/screens/import_keys.dart';
+import 'package:hiveauthsigner/screens/pinlock_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({
@@ -16,6 +18,13 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
+  var isDarkMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    isDarkMode = widget.data.isDarkMode;
+  }
 
   Widget _drawerHeader() {
     return DrawerHeader(
@@ -38,20 +47,22 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             ),
           ],
         ),
-        onTap: () {
-        },
+        onTap: () {},
       ),
     );
   }
 
   Widget _changeTheme() {
     return ListTile(
-      leading: !widget.data.isDarkMode
+      leading: !isDarkMode
           ? const Icon(Icons.wb_sunny)
           : const Icon(Icons.mode_night),
       title: const Text("Change Theme"),
       onTap: () async {
         hiveAuthData.setDarkMode(!widget.data.isDarkMode, widget.data);
+        setState(() {
+          isDarkMode = !widget.data.isDarkMode;
+        });
       },
     );
   }
@@ -60,9 +71,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return ListTile(
       leading: const Icon(Icons.group),
       title: const Text("View Accounts"),
-      onTap: () async {
-
-      },
+      onTap: () async {},
     );
   }
 
@@ -70,9 +79,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return ListTile(
       leading: const Icon(Icons.key_sharp),
       title: const Text("Manage Keys"),
-      onTap: () async {
-
-      },
+      onTap: () async {},
     );
   }
 
@@ -80,8 +87,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return ListTile(
       leading: const Icon(Icons.add_box_outlined),
       title: const Text("Import"),
-      onTap: () async {
-
+      onTap: () {
+        var screen = const ImportKeysScreen();
+        var route = MaterialPageRoute(builder: (c) => screen);
+        Navigator.of(context).pushReplacement(route);
       },
     );
   }
@@ -90,9 +99,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return ListTile(
       leading: const Icon(Icons.qr_code),
       title: const Text("Scan QR Code"),
-      onTap: () async {
-
-      },
+      onTap: () async {},
     );
   }
 
@@ -100,8 +107,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return ListTile(
       leading: const Icon(Icons.lock),
       title: const Text("Lock App"),
-      onTap: () async {
-
+      onTap: () {
+        var screen = PinLockScreen(data: widget.data);
+        var route = MaterialPageRoute(builder: (c) => screen);
+        Navigator.of(context).pushReplacement(route);
       },
     );
   }
@@ -110,9 +119,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return ListTile(
       leading: const Icon(Icons.info),
       title: const Text("About"),
-      onTap: () async {
-
-      },
+      onTap: () async {},
     );
   }
 
@@ -120,31 +127,27 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return ListTile(
       leading: const Icon(Icons.settings),
       title: const Text("Settings"),
-      onTap: () async {
-
-      },
+      onTap: () async {},
     );
   }
 
-  @override
-  Widget _menu() {
-    List<Widget> defaultItems = [
-      // _drawerHeader(),
-    ];
-    if (widget.data.isAppUnlocked == true) {
-      defaultItems.add(_viewAccounts());
-      defaultItems.add(_manageKeys());
-      defaultItems.add(_import());
-      defaultItems.add(_scanQR());
-    }
+  Widget _dashboardMenu() {
+    List<Widget> defaultItems = [];
+    defaultItems.add(_viewAccounts());
+    defaultItems.add(_manageKeys());
+    defaultItems.add(_import());
+    defaultItems.add(_scanQR());
     defaultItems.add(_about());
     defaultItems.add(_settings());
-    if (widget.data.isAppUnlocked == true) {
-      defaultItems.add(_changeTheme());
-    }
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: defaultItems,
+    defaultItems.add(_changeTheme());
+    defaultItems.add(_lock());
+    return Container(
+      margin: const EdgeInsets.only(top: 20),
+      child: ListView.separated(
+        itemBuilder: (c, i) => defaultItems[i],
+        separatorBuilder: (c, i) => const Divider(),
+        itemCount: defaultItems.length,
+      ),
     );
   }
 
@@ -164,65 +167,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.lock),
-            onPressed: () {},
+            onPressed: () {
+              var screen = PinLockScreen(data: widget.data);
+              var route = MaterialPageRoute(builder: (c) => screen);
+              Navigator.of(context).push(route);
+            },
           ),
         ],
       ),
       body: SafeArea(
-        child: _menu(),
+        child: _dashboardMenu(),
       ),
-      // drawer: DrawerScreen(data: widget.data),
     );
   }
 }
-
-/*
-Column(
-          children: [
-            const Spacer(),
-            Text(
-              'Welcome to Hive Auth Signer.\nPlease choose an action.',
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 30),
-            Row(
-              children: [
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.group),
-                  label: const Text('View Accounts'),
-                ),
-                const SizedBox(width: 30),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.key),
-                  label: const Text('Manage Keys'),
-                ),
-                const Spacer(),
-              ],
-            ),
-            const SizedBox(height: 30),
-            Row(
-              children: [
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add_box_outlined),
-                  label: const Text('Import Keys'),
-                ),
-                const SizedBox(width: 30),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.qr_code),
-                  label: const Text('Scan QR Code'),
-                ),
-                const Spacer(),
-              ],
-            ),
-            const SizedBox(height: 30),
-            const Spacer(),
-          ],
-        ),
- */

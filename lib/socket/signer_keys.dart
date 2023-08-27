@@ -1,24 +1,42 @@
+import 'dart:convert';
+
 class SignerKeysModel {
   String name;
 
   String? posting;
-  String? postingPublic;
-
   String? active;
-  String? activePublic;
-
   String? memo;
-  String? memoPublic;
 
   SignerKeysModel({
     required this.name,
     required this.posting,
-    required this.postingPublic,
     required this.active,
-    required this.activePublic,
     required this.memo,
-    required this.memoPublic,
   });
+
+  static List<SignerKeysModel> fromRawJson(String str) {
+    var result = json.decode(str) as List<dynamic>;
+    return result.map((element) {
+      return SignerKeysModel.fromJson(element);
+    }).toList();
+  }
+
+  String toRawJson() => json.encode(toJson());
+
+  factory SignerKeysModel.fromJson(Map<String, dynamic> json) =>
+      SignerKeysModel(
+        name: json["name"],
+        posting: json["posting"],
+        active: json["active"],
+        memo: json["memo"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'posting': posting,
+        'active': active,
+        'memo': memo,
+      };
 }
 
 class LowestPrivateKey {

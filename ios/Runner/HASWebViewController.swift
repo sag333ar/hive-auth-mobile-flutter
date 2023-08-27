@@ -15,6 +15,7 @@ class HASWebViewController: UIViewController {
     var webView: WKWebView?
     var didFinish = false
     var getProofOfKeyHandler: ((String) -> Void)? = nil
+    var validateHiveKeyHandler: ((String) -> Void)? = nil
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -44,6 +45,17 @@ class HASWebViewController: UIViewController {
             self.webView?.evaluateJavaScript("getProofOfKey('\(privateKey)', '\(publicKey)', '\(memo)');")
         }
     }
+
+    func validateHiveKey(
+        accountName: String,
+        userKey: String,
+        handler: @escaping (String) -> Void
+    ) {
+        validateHiveKeyHandler = handler
+        OperationQueue.main.addOperation {
+            self.webView?.evaluateJavaScript("validateHiveKey('\(accountName)', '\(userKey)');")
+        }
+    }
 }
 
 extension HASWebViewController: WKNavigationDelegate {
@@ -67,6 +79,8 @@ extension HASWebViewController: WKScriptMessageHandler {
         switch type {
             case "getProofOfKey":
                 getProofOfKeyHandler?(jsonString)
+            case "validateHiveKey":
+                validateHiveKeyHandler?(jsonString)
             default:
                 debugPrint("Do nothing")
         }

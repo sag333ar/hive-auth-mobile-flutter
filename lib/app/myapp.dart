@@ -3,7 +3,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hiveauthsigner/app/hiveauthsignerapp.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
-import 'package:hiveauthsigner/socket/signer_keys.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
 
@@ -60,6 +59,7 @@ class _MyAppState extends State<MyApp> {
             isAppUnlocked: false,
             hasWsServer: "wss://hive-auth.arcange.eu",
             isDarkMode: true,
+            mp: null,
           ),
           child: const HiveAuthSignerApp(),
         ),
@@ -75,19 +75,6 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> loadData() async {
     var hasWsServer = dotenv.env['HAS_SERVER'] ?? 'wss://hive-auth.arcange.eu';
-    var postingKey = dotenv.env['POSTING_KEY'] ?? '';
-    var postingPublicKey = dotenv.env['POSTING_PUBLIC_KEY'] ?? '';
-    hiveAuthData.handler.keys = [
-      SignerKeysModel(
-        name: 'shaktimaaan',
-        posting: postingKey,
-        postingPublic: postingPublicKey,
-        active: null,
-        activePublic: null,
-        memo: null,
-        memoPublic: null,
-      ),
-    ];
     hiveAuthData.startSocket(hasWsServer);
     bool isPinStored =
         await hiveAuthData.pinStorageManager.doWeHaveSecurePinStored();
@@ -98,6 +85,7 @@ class _MyAppState extends State<MyApp> {
         isAppUnlocked: false,
         hasWsServer: hasWsServer,
         isDarkMode: true,
+        mp: null,
       ),
     );
   }

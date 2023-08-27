@@ -25,6 +25,37 @@
       });
     }
 
+    function validateHiveKey(accountName, userKey) {
+      console.log("In here before async");
+      hive.api
+        .getAccountsAsync([accountName])
+        .then(function (accounts) {
+          console.log("In here after async");
+          console.log("Accounts: ", accounts);
+          const publicPosting = accounts[0].posting.key_auths[0][0];
+          const publicActive = account[0].active.key_auths[0][0];
+          const publicMemo = account[0].memo_key;
+          const isItPostingKey = hive.auth.wifIsValid(userKey, publicPosting);
+          const isItActiveKey = hive.auth.wifIsValid(userKey, publicActive);
+          const isItMemoKey = hive.auth.wifIsValid(userKey, publicMemo);
+          const noKey = !isItPostingKey && !isItActiveKey && !isItMemoKey;
+          const keyType = isItPostingKey ? 'posting' : isItActiveKey ? 'active' : isItMemoKey ? 'memo' : '';
+          replyToNative({
+            type: "validateHiveKey",
+            error: noKey ? "Invalid Key" : "",
+            data: keyType,
+          });
+        })
+        .catch(function (err) {
+          console.log("Error: ", err);
+          replyToNative({
+            type: "validateHiveKey",
+            error: err.message,
+            data: "",
+          });
+        });
+    }
+
     function replyToNative(result) {
       console.log(`Result is ${JSON.stringify(result)}`);
       // window.webkit.messageHandlers.hiveauthsigner.postMessage(result);
