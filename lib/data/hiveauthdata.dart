@@ -49,6 +49,18 @@ class HiveAuthData {
     );
   }
 
+  void updatePin(String newPin, HiveAuthSignerData data) {
+    updateHiveUserData(
+      HiveAuthSignerData(
+        appPinHash: newPin,
+        dataLoaded: data.dataLoaded,
+        isAppUnlocked: data.isAppUnlocked,
+        hasWsServer: data.hasWsServer,
+        isDarkMode: data.isDarkMode,
+      ),
+    );
+  }
+
   void startSocket(String hasWsServer) {
     socket = WebSocketChannel.connect(
       Uri.parse(hasWsServer),

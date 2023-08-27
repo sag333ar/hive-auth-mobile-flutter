@@ -67,7 +67,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
       decoration: const InputDecoration(
         icon: Icon(Icons.pin),
         label: Text('App Pin'),
-        hintText: 'Enter App Unlock Pin here',
+        hintText: 'Enter 6-Digit App Unlock Pin here',
       ),
       obscureText: true,
       onChanged: (value) {
@@ -83,7 +83,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
       decoration: const InputDecoration(
         icon: Icon(Icons.pin),
         label: Text('ReEnter App Pin'),
-        hintText: 'RE-Enter App Unlock Pin here',
+        hintText: 'RE-Enter 6-Digit App Unlock Pin here',
       ),
       obscureText: true,
       onChanged: (value) {
@@ -95,8 +95,35 @@ class _PinLockScreenState extends State<PinLockScreen> {
   }
 
   Widget _submitButton() {
+    var enteredPin = pinText.trim();
+    var shouldEnable = enteredPin.length == 6;
+    if (shouldEnable) {
+      var checkText = enteredPin.replaceAll(RegExp(r"[0-9]"), "");
+      if (checkText.isNotEmpty) {
+        shouldEnable = false;
+      }
+    }
+    if (widget.data.appPinHash == null) {
+      var reEnteredPin = rePinText.trim();
+      if (shouldEnable) {
+        shouldEnable = reEnteredPin == enteredPin;
+      }
+    }
     return ElevatedButton(
-      onPressed: () {},
+      onPressed: shouldEnable
+          ? () async {
+              if (widget.data.appPinHash == null) {
+                await hiveAuthData.pinStorageManager.updatePinHash(enteredPin);
+                hiveAuthData.updatePin(enteredPin, widget.data);
+              } else {
+                if (widget.data.appPinHash == enteredPin) {
+                  showError('VALID PIN entered. Let us go.');
+                } else {
+                  showError('Incorrect PIN entered.');
+                }
+              }
+            }
+          : null,
       child: const Text('Unlock'),
     );
   }
@@ -141,6 +168,11 @@ class _PinLockScreenState extends State<PinLockScreen> {
     }
   }
 
+  void showError(String string) async {
+    var snackBar = SnackBar(content: Text('Error: $string'));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,12 +194,12 @@ class _PinLockScreenState extends State<PinLockScreen> {
               ? _noBio()
               : _withBio(),
       drawer: DrawerScreen(data: widget.data),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          hiveAuthData.startSocket(widget.data.hasWsServer);
-        },
-        child: const Icon(Icons.refresh),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {
+      //     hiveAuthData.startSocket(widget.data.hasWsServer);
+      //   },
+      //   child: const Icon(Icons.refresh),
+      // ),
     );
   }
 }

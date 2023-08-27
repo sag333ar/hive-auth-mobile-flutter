@@ -14,8 +14,8 @@ class HASPinStorageManager {
 
   Future<String?> appPinHash() async {
     try {
-      final pinHashValue = await MethodChannelBiometricStorage().read(
-          _pinHash, const PromptInfo());
+      final pinHashFile = await MethodChannelBiometricStorage().getStorage(_pinHash);
+      final pinHashValue = await pinHashFile.read(promptInfo: const PromptInfo());
       return pinHashValue;
     } catch (exception) {
       if (exception.toString().contains("Storage was not initialized $_pinHash")) {
@@ -27,6 +27,7 @@ class HASPinStorageManager {
   }
 
   Future<void> updatePinHash(String value) async {
-    await MethodChannelBiometricStorage().write(_pinHash, value, const PromptInfo());
+    final pinHashFile = await MethodChannelBiometricStorage().getStorage(_pinHash);
+    await pinHashFile.write(value, promptInfo: const PromptInfo());
   }
 }
