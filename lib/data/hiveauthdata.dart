@@ -2,11 +2,17 @@ import 'dart:async';
 
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
 import 'package:hiveauthsigner/socket/socket_handler.dart';
+import 'package:hiveauthsigner/utilities/storage.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:flutter/material.dart';
 
 class HiveAuthData {
   SocketHandler handler = SocketHandler();
   late WebSocketChannel socket;
+
+  HASPinStorageManager pinStorageManager = HASPinStorageManager();
+
+  final themeColor = Colors.red[900];
 
   String userOwnerThumb(String value) {
     return "https://images.hive.blog/u/$value/avatar";

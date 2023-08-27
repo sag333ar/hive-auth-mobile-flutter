@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hiveauthsigner/app/hiveauthsignerapp.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
@@ -90,8 +89,7 @@ class _MyAppState extends State<MyApp> {
       ),
     ];
     hiveAuthData.startSocket(hasWsServer);
-    const storage = FlutterSecureStorage();
-    String? appPinHash = await storage.read(key: 'app_pin_hash');
+    String? appPinHash = await hiveAuthData.pinStorageManager.appPinHash();
     hiveAuthData.updateHiveUserData(
       HiveAuthSignerData(
         appPinHash: appPinHash,
