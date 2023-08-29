@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
+import 'package:hiveauthsigner/screens/about_screen.dart';
 import 'package:hiveauthsigner/screens/import_keys.dart';
 import 'package:hiveauthsigner/screens/manage_keys.dart';
 import 'package:hiveauthsigner/screens/pinlock_screen.dart';
@@ -29,43 +30,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     isDarkMode = widget.data.isDarkMode;
   }
 
-  Widget _drawerHeader() {
-    return DrawerHeader(
-      child: InkWell(
-        child: Column(
-          children: [
-            Image.asset(
-              "assets/app-icon.png",
-              height: 65,
-            ),
-            const SizedBox(height: 5),
-            Text(
-              "Auth Signer",
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 5),
-            Text(
-              "@arcange, @sagarkothari88",
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        ),
-        onTap: () {},
-      ),
-    );
-  }
-
-  Widget _changeTheme() {
+  Widget _changeTheme(HiveAuthSignerData data) {
     return ListTile(
-      leading: !isDarkMode
+      leading: !data.isDarkMode
           ? const Icon(Icons.wb_sunny)
           : const Icon(Icons.mode_night),
       title: const Text("Change Theme"),
-      onTap: () async {
-        hiveAuthData.setDarkMode(!widget.data.isDarkMode, widget.data);
-        setState(() {
-          isDarkMode = !widget.data.isDarkMode;
-        });
+      onTap: () {
+        hiveAuthData.setDarkMode(!data.isDarkMode, data);
       },
     );
   }
@@ -127,7 +99,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return ListTile(
       leading: const Icon(Icons.info),
       title: const Text("About"),
-      onTap: () async {},
+      onTap: () {
+        var screen = const AboutScreen();
+        var route = MaterialPageRoute(builder: (c) => screen);
+        Navigator.of(context).push(route);
+      },
     );
   }
 
@@ -139,15 +115,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _dashboardMenu() {
+  Widget _dashboardMenu(HiveAuthSignerData data) {
     List<Widget> defaultItems = [];
-    defaultItems.add(_viewAccounts());
+    // defaultItems.add(_viewAccounts());
     defaultItems.add(_manageKeys());
     defaultItems.add(_import());
     defaultItems.add(_scanQR());
     defaultItems.add(_about());
-    defaultItems.add(_settings());
-    defaultItems.add(_changeTheme());
+    // defaultItems.add(_settings());
+    defaultItems.add(_changeTheme(data));
     defaultItems.add(_lock());
     return Container(
       margin: const EdgeInsets.only(top: 20),
@@ -159,6 +135,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
+  void showMessage(String string) async {
+    var snackBar = SnackBar(content: Text(string));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   void reconnectSockets(HiveAuthSignerData data) async {
     setState(() {
       didSendInitialSocketRequest = true;
@@ -168,6 +149,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         keyAck = false;
       });
       var ks = await hiveAuthData.pinStorageManager.getKeys(data.mp!);
+      if (ks.isEmpty) {
+        showMessage('No accounts found to connect');
+      }
       setState(() {
         hiveAuthData.startSocket(data.hasWsServer, ks, () {
           setState(() {
@@ -213,7 +197,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: _dashboardMenu(),
+        child: _dashboardMenu(data),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

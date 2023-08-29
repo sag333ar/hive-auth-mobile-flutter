@@ -45,6 +45,8 @@ dependencies:
   crypto: ^3.0.3
   encryptor: ^0.0.1
   biometric_storage: ^5.0.0+3
+  url_launcher: ^6.1.12
+  font_awesome_flutter: ^10.5.0
 
 dev_dependencies:
   flutter_test:
