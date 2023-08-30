@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
 import 'package:hiveauthsigner/screens/about_screen.dart';
+import 'package:hiveauthsigner/screens/auth_dialog.dart';
 import 'package:hiveauthsigner/screens/import_keys.dart';
 import 'package:hiveauthsigner/screens/manage_keys.dart';
 import 'package:hiveauthsigner/screens/pinlock_screen.dart';
@@ -24,10 +25,13 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends State<WelcomeScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   var isDarkMode = false;
   var didSendInitialSocketRequest = false;
   var keyAck = false;
+  AuthReqDecryptedPayload? payload;
 
   @override
   void initState() {
@@ -86,7 +90,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       onTap: () {
         var screen = QRScannerScreen(didFinishScan: (scanText) {
           var text = scanText as String?;
-          if (text != null && text.isNotEmpty && text.contains('has://auth_req/')) {
+          if (text != null &&
+              text.isNotEmpty &&
+              text.contains('has://auth_req/')) {
             var newText = text.split('has://auth_req/')[1];
             var decodedBytes = base64.decode(newText);
             var decodedStr = utf8.decode(decodedBytes);
@@ -165,32 +171,64 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     HiveAuthSignerData data,
     AuthReqPayload? authReqPayload,
   ) async {
-    setState(() {
-      didSendInitialSocketRequest = true;
-    });
-    if (data.mp != null) {
+    if (mounted) {
       setState(() {
-        keyAck = false;
+        didSendInitialSocketRequest = true;
       });
+    }
+    if (data.mp != null) {
+      if (mounted) {
+        setState(() {
+          keyAck = false;
+        });
+      }
       var ks = await hiveAuthData.pinStorageManager.getKeys(data.mp!);
       if (ks.isEmpty) {
         showMessage('No accounts found to connect');
       }
-      setState(() {
-        hiveAuthData.startSocket(
-            authReqPayload?.host ?? data.hasWsServer, ks, authReqPayload, () {
+      hiveAuthData.startSocket(
+          authReqPayload?.host ?? data.hasWsServer, ks, authReqPayload, () {
+        if (mounted) {
           setState(() {
             keyAck = true;
           });
-        }, (authDataAsString) {
-          log(authDataAsString);
-        });
+        }
+      }, (authDataAsString) {
+        if (mounted) {
+          setState(() {
+            payload =
+                AuthReqDecryptedPayload.fromJsonString(authDataAsString);
+          });
+        }
       });
     }
   }
 
+  void showBottomDialog(AuthReqDecryptedPayload payload) {
+    var screen = AuthDialogScreen(payload: payload);
+    this.payload = null;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      clipBehavior: Clip.hardEdge,
+      builder: (context) {
+        return SizedBox(
+          height: MediaQuery
+              .of(context)
+              .size
+              .height * 0.4,
+          child: screen,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+    if (payload != null) {
+      showBottomDialog(payload!);
+    }
     var data = Provider.of<HiveAuthSignerData>(context);
     if (!didSendInitialSocketRequest) {
       reconnectSockets(data, null);

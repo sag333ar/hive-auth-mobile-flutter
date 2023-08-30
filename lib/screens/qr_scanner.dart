@@ -18,7 +18,6 @@ class QRScannerScreen extends StatefulWidget {
 
 class _QRScannerScreenState extends State<QRScannerScreen> {
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
-  Barcode? result;
   QRViewController? controller;
   var didSendReply = false;
 
@@ -37,8 +36,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     controller.scannedDataStream.listen((scanData) {
       setState(() {
         controller.pauseCamera();
-        result = scanData;
-        log('Scanned Data is ${scanData.code ?? ''}');
         if (!didSendReply) {
           didSendReply = true;
           widget.didFinishScan(scanData.code ?? '');

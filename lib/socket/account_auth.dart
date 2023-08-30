@@ -100,3 +100,86 @@ class AuthReqPayload {
         'host': host,
       };
 }
+
+class AuthReqDecryptedPayloadApp {
+  String name;
+  String description;
+  String icon;
+
+  AuthReqDecryptedPayloadApp({
+    required this.name,
+    required this.description,
+    required this.icon,
+  });
+
+  String toRawJson() => json.encode(toJson());
+
+  factory AuthReqDecryptedPayloadApp.fromJsonString(String jsonString) =>
+      AuthReqDecryptedPayloadApp.fromJson(json.decode(jsonString));
+
+  factory AuthReqDecryptedPayloadApp.fromJson(Map<String, dynamic> json) =>
+      AuthReqDecryptedPayloadApp(
+        name: json["name"],
+        description: json["description"],
+        icon: json["icon"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'description': description,
+        'icon': icon,
+      };
+}
+
+class AuthReqDecryptedPayloadChallenge {
+  String keyType;
+  String challenge;
+
+  AuthReqDecryptedPayloadChallenge({
+    required this.keyType,
+    required this.challenge,
+  });
+
+  String toRawJson() => json.encode(toJson());
+
+  factory AuthReqDecryptedPayloadChallenge.fromJsonString(String jsonString) =>
+      AuthReqDecryptedPayloadChallenge.fromJson(json.decode(jsonString));
+
+  factory AuthReqDecryptedPayloadChallenge.fromJson(
+          Map<String, dynamic> json) =>
+      AuthReqDecryptedPayloadChallenge(
+        keyType: json["key_type"],
+        challenge: json["challenge"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        'key_type': keyType,
+        'challenge': challenge,
+      };
+}
+
+class AuthReqDecryptedPayload {
+  AuthReqDecryptedPayloadChallenge challenge;
+  AuthReqDecryptedPayloadApp app;
+
+  AuthReqDecryptedPayload({
+    required this.app,
+    required this.challenge,
+  });
+
+  String toRawJson() => json.encode(toJson());
+
+  factory AuthReqDecryptedPayload.fromJsonString(String jsonString) =>
+      AuthReqDecryptedPayload.fromJson(json.decode(jsonString));
+
+  factory AuthReqDecryptedPayload.fromJson(Map<String, dynamic> json) =>
+      AuthReqDecryptedPayload(
+        app: AuthReqDecryptedPayloadApp.fromJson(json["app"]),
+        challenge: AuthReqDecryptedPayloadChallenge.fromJson(json["challenge"]),
+      );
+
+  Map<String, dynamic> toJson() => {
+    'app': app.toJson(),
+    'challenge': challenge.toJson(),
+  };
+}
