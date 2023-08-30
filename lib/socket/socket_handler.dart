@@ -11,19 +11,20 @@ import 'dart:convert';
 import 'package:hiveauthsigner/socket/account_auth.dart';
 import 'package:hiveauthsigner/socket/bridge_response.dart';
 import 'package:hiveauthsigner/socket/signer_keys.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 class SocketHandler {
   double hasProtocol = 0.0;
   String? keyServer;
   static const appName = "HiveAuth Signer Mobile App";
   List<AccountAuthModel> authModel = [];
-  List<SignerKeysModel> keys = [];
+
+  // List<SignerKeysModel> keys = [];
   static const keyTypes = ["memo", "posting", "active"];
   static const platform = MethodChannel('com.hiveauth.hiveauthsigner/bridge');
   AuthReqPayload? authReqPayload;
+  Function? sendMessageHandler;
 
-  String? getPrivateKey(String name, String type) {
+  String? getPrivateKey(String name, String type, List<SignerKeysModel> keys) {
     var account = keys
         .firstWhereOrNull((o) => o.name.toLowerCase() == name.toLowerCase());
     if (account != null) {
@@ -42,9 +43,10 @@ class SocketHandler {
     }
   }
 
-  LowestPrivateKey? getLowestPrivateKey(String name) {
+  LowestPrivateKey? getLowestPrivateKey(
+      String name, List<SignerKeysModel> keys) {
     for (var keyType in keyTypes) {
-      var keyPrivate = getPrivateKey(name, keyType);
+      var keyPrivate = getPrivateKey(name, keyType, keys);
       if (keyPrivate != null) {
         return LowestPrivateKey(keyType: keyType, keyPrivate: keyPrivate);
       } else {
@@ -54,9 +56,10 @@ class SocketHandler {
     return null;
   }
 
-  Future<String?> getProofOfKey(String name, String? value) async {
+  Future<String?> getProofOfKey(
+      String name, String? value, List<SignerKeysModel> keys) async {
     value ??= DateTime.now().toIso8601String();
-    LowestPrivateKey? key = getLowestPrivateKey(name);
+    LowestPrivateKey? key = getLowestPrivateKey(name, keys);
     if (key != null && keyServer != null) {
       final String response = await platform.invokeMethod('getProofOfKey', {
         'privateKey': key.keyPrivate,
@@ -76,14 +79,14 @@ class SocketHandler {
 
   void handleMessage(
     String message,
-    WebSocketChannel socket,
-    List<SignerKeysModel> newKeys,
+    List<SignerKeysModel> keys,
     AuthReqPayload? authReqPayload,
     Function? handleKeysAck,
     Function? showAuthReqDialog,
+    Function? sendMessage,
   ) {
-    keys = newKeys;
     this.authReqPayload = authReqPayload;
+    sendMessageHandler = sendMessage;
     if (kDebugMode) {
       log('Message received on socket - $message');
     }
@@ -94,7 +97,7 @@ class SocketHandler {
         switch (cmd) {
           case "connected":
             hasProtocol = (payload["protocol"] as double?) ?? 0;
-            _handleConnected(socket);
+            _handleConnected();
             break;
           case "error":
             log('Error occurred on websocket - $message');
@@ -104,7 +107,7 @@ class SocketHandler {
               handleKeysAck();
             }
             if (keys.isNotEmpty) {
-              _handleKeyAck(payload, socket);
+              _handleKeyAck(payload, keys);
             }
             return;
           case "register_ack":
@@ -114,8 +117,7 @@ class SocketHandler {
             log('do something for "auth_req" - $message');
             _handleAuthReq(
               message,
-              socket,
-              newKeys,
+              keys,
               handleKeysAck,
               payload,
               showAuthReqDialog,
@@ -134,7 +136,6 @@ class SocketHandler {
 
   void _handleAuthReq(
     String message,
-    WebSocketChannel socket,
     List<SignerKeysModel> newKeys,
     Function? handleKeysAck,
     Map<String, dynamic> payload,
@@ -255,8 +256,8 @@ class SocketHandler {
       if (!keyTypes.contains(challengeKeyType)) {
         return;
       }
-      var keyPrivate =
-          getPrivateKey(accountText.trim().toLowerCase(), challengeKeyType);
+      var keyPrivate = getPrivateKey(
+          accountText.trim().toLowerCase(), challengeKeyType, newKeys);
 
       final String signChallengeResponse =
           await platform.invokeMethod('signChallenge', {
@@ -279,14 +280,14 @@ class SocketHandler {
 
   void _handleKeyAck(
     Map<String, dynamic> payload,
-    WebSocketChannel socketChannel,
+    List<SignerKeysModel> keys,
   ) async {
     keyServer = payload["key"] as String?;
     if (keyServer != null) {
       List<AccountAndProofOfKey> newAccounts = [];
       for (var element in keys) {
         var name = element.name.trim().toLowerCase();
-        var proofOfKey = await getProofOfKey(name, null);
+        var proofOfKey = await getProofOfKey(name, null, keys);
         if (name.isNotEmpty && proofOfKey != null && proofOfKey.isNotEmpty) {
           newAccounts.add(
             AccountAndProofOfKey(
@@ -302,18 +303,21 @@ class SocketHandler {
         accounts: newAccounts,
       ).toJson();
       var jsonString = json.encode(request);
-      hasSend(jsonString, socketChannel);
+      hasSend(jsonString);
     }
   }
 
-  void _handleConnected(WebSocketChannel socket) {
-    hasSend(json.encode({"cmd": "key_req"}), socket);
+  void _handleConnected() {
+    hasSend(json.encode({"cmd": "key_req"}));
   }
 
-  void hasSend(String message, WebSocketChannel socket) {
+  void hasSend(String message) {
     if (kDebugMode) {
       log('Sending message via socket - $message');
     }
-    socket.sink.add(message);
+    if (sendMessageHandler != null) {
+      sendMessageHandler!(message);
+    }
+    // socket.sink.add(message);
   }
 }

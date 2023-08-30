@@ -60,7 +60,10 @@ class _MyAppState extends State<MyApp> {
             hasWsServer: "wss://hive-auth.arcange.eu",
             isDarkMode: true,
             mp: null,
-            keyAck: false,
+            socketData: HASSocketData(
+              actionPayload: null,
+              wasKeyAcknowledged: false,
+            ),
           ),
           child: const HiveAuthSignerApp(),
         ),
@@ -76,7 +79,6 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> loadData() async {
     var hasWsServer = dotenv.env['HAS_SERVER'] ?? 'wss://hive-auth.arcange.eu';
-    hiveAuthData.startSocket(hasWsServer, [], null, null, null);
     bool isPinStored =
         await hiveAuthData.pinStorageManager.doWeHaveSecurePinStored();
     hiveAuthData.updateHiveUserData(
@@ -87,7 +89,10 @@ class _MyAppState extends State<MyApp> {
         hasWsServer: hasWsServer,
         isDarkMode: true,
         mp: null,
-        keyAck: false,
+        socketData: HASSocketData(
+          actionPayload: null,
+          wasKeyAcknowledged: false,
+        ),
       ),
     );
   }

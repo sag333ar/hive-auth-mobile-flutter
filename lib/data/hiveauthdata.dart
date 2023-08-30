@@ -2,16 +2,10 @@ import 'dart:async';
 
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
 import 'package:hiveauthsigner/socket/account_auth.dart';
-import 'package:hiveauthsigner/socket/signer_keys.dart';
-import 'package:hiveauthsigner/socket/socket_handler.dart';
 import 'package:hiveauthsigner/utilities/storage.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:flutter/material.dart';
 
 class HiveAuthData {
-  SocketHandler handler = SocketHandler();
-  late WebSocketChannel socket;
-
   HASPinStorageManager pinStorageManager = HASPinStorageManager();
 
   final themeColor = Colors.red[900];
@@ -48,7 +42,7 @@ class HiveAuthData {
         hasWsServer: data.hasWsServer,
         isDarkMode: value,
         mp: data.mp,
-        keyAck: data.keyAck,
+        socketData: data.socketData,
       ),
     );
   }
@@ -62,7 +56,7 @@ class HiveAuthData {
         hasWsServer: data.hasWsServer,
         isDarkMode: data.isDarkMode,
         mp: data.mp,
-        keyAck: data.keyAck,
+        socketData: data.socketData,
       ),
     );
   }
@@ -76,7 +70,7 @@ class HiveAuthData {
         hasWsServer: data.hasWsServer,
         isDarkMode: data.isDarkMode,
         mp: data.mp,
-        keyAck: data.keyAck,
+        socketData: data.socketData,
       ),
     );
   }
@@ -90,7 +84,7 @@ class HiveAuthData {
         hasWsServer: data.hasWsServer,
         isDarkMode: data.isDarkMode,
         mp: mp,
-        keyAck: data.keyAck,
+        socketData: data.socketData,
       ),
     );
   }
@@ -104,32 +98,52 @@ class HiveAuthData {
         hasWsServer: data.hasWsServer,
         isDarkMode: data.isDarkMode,
         mp: data.mp,
-        keyAck: value,
+        socketData: HASSocketData(
+          actionPayload: data.socketData.actionPayload,
+          wasKeyAcknowledged: value,
+        ),
       ),
     );
   }
 
-  void startSocket(
-    String hasWsServer,
-    List<SignerKeysModel> newKeys,
-    AuthReqPayload? authReqPayload,
-    Function? handleKeysAck,
-    Function? showAuthReqDialog,
-  ) {
-    socket = WebSocketChannel.connect(
-      Uri.parse(hasWsServer),
+  void setActionPayload(AuthReqDecryptedPayload? actionPayload, HiveAuthSignerData data) {
+    updateHiveUserData(
+      HiveAuthSignerData(
+        doWeHaveSecurePin: data.doWeHaveSecurePin,
+        dataLoaded: data.dataLoaded,
+        isAppUnlocked: data.isAppUnlocked,
+        hasWsServer: data.hasWsServer,
+        isDarkMode: data.isDarkMode,
+        mp: data.mp,
+        socketData: HASSocketData(
+          actionPayload: actionPayload,
+          wasKeyAcknowledged: data.socketData.wasKeyAcknowledged,
+        ),
+      ),
     );
-    socket.stream.listen((message) {
-      handler.handleMessage(
-        message,
-        socket,
-        newKeys,
-        authReqPayload,
-        handleKeysAck,
-        showAuthReqDialog,
-      );
-    });
   }
+
+  // void startSocket(
+  //   String hasWsServer,
+  //   List<SignerKeysModel> newKeys,
+  //   AuthReqPayload? authReqPayload,
+  //   Function? handleKeysAck,
+  //   Function? showAuthReqDialog,
+  // ) {
+  //   socket = WebSocketChannel.connect(
+  //     Uri.parse(hasWsServer),
+  //   );
+  //   socket.stream.listen((message) {
+  //     handler.handleMessage(
+  //       message,
+  //       socket,
+  //       newKeys,
+  //       authReqPayload,
+  //       handleKeysAck,
+  //       showAuthReqDialog,
+  //     );
+  //   });
+  // }
 }
 
 HiveAuthData hiveAuthData = HiveAuthData();

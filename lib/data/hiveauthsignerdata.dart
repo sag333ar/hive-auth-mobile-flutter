@@ -1,3 +1,5 @@
+import 'package:hiveauthsigner/socket/account_auth.dart';
+
 class HiveAuthSignerData {
   bool doWeHaveSecurePin;
   bool dataLoaded;
@@ -5,7 +7,7 @@ class HiveAuthSignerData {
   String hasWsServer;
   bool isDarkMode;
   String? mp;
-  bool keyAck;
+  HASSocketData socketData;
 
   HiveAuthSignerData({
     required this.doWeHaveSecurePin,
@@ -14,6 +16,16 @@ class HiveAuthSignerData {
     required this.hasWsServer,
     required this.isDarkMode,
     required this.mp,
-    required this.keyAck,
+    required this.socketData,
+  });
+}
+
+class HASSocketData {
+  bool wasKeyAcknowledged;
+  AuthReqDecryptedPayload? actionPayload;
+
+  HASSocketData({
+    required this.wasKeyAcknowledged,
+    required this.actionPayload,
   });
 }

@@ -11,10 +11,12 @@ import 'package:hiveauthsigner/screens/manage_keys.dart';
 import 'package:hiveauthsigner/screens/pinlock_screen.dart';
 import 'package:hiveauthsigner/screens/qr_scanner.dart';
 import 'package:hiveauthsigner/socket/account_auth.dart';
+import 'package:hiveauthsigner/socket/socket_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
-class WelcomeScreen extends StatefulWidget {
-  const WelcomeScreen({
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({
     super.key,
     required this.data,
   });
@@ -22,16 +24,21 @@ class WelcomeScreen extends StatefulWidget {
   final HiveAuthSignerData data;
 
   @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> with AutomaticKeepAliveClientMixin {
+class _DashboardScreenState extends State<DashboardScreen>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
   var isDarkMode = false;
-  var didSendInitialSocketRequest = false;
-  var keyAck = false;
-  AuthReqDecryptedPayload? payload;
+  WebSocketChannel? socket;
+
+  // = WebSocketChannel.connect(
+  //   Uri.parse('wss://hive-auth.arcange.eu'),
+  // );
+  SocketHandler handler = SocketHandler();
+  AuthReqPayload? qrScannerAuthReqPayload;
 
   @override
   void initState() {
@@ -99,7 +106,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with AutomaticKeepAliveCl
             log('Decoded string is - $decodedStr');
             var payload = AuthReqPayload.fromJsonString(decodedStr);
             setState(() {
-              reconnectSockets(data, payload);
+              qrScannerAuthReqPayload = payload;
+              reconnectSockets(data);
             });
           }
           // payload.host
@@ -167,112 +175,128 @@ class _WelcomeScreenState extends State<WelcomeScreen> with AutomaticKeepAliveCl
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  void reconnectSockets(
-    HiveAuthSignerData data,
-    AuthReqPayload? authReqPayload,
-  ) async {
-    if (mounted) {
-      setState(() {
-        didSendInitialSocketRequest = true;
-      });
-    }
-    if (data.mp != null) {
-      if (mounted) {
+  void startSocket(String hasWsServer) {
+    setState(() {
+      if (socket != null) {
+        socket?.sink.close();
+        socket = null;
+      }
+      Future.delayed(const Duration(milliseconds: 1250), () {
         setState(() {
-          keyAck = false;
+          socket = WebSocketChannel.connect(
+            Uri.parse(hasWsServer),
+          );
         });
-      }
-      var ks = await hiveAuthData.pinStorageManager.getKeys(data.mp!);
-      if (ks.isEmpty) {
-        showMessage('No accounts found to connect');
-      }
-      hiveAuthData.startSocket(
-          authReqPayload?.host ?? data.hasWsServer, ks, authReqPayload, () {
-        if (mounted) {
-          setState(() {
-            keyAck = true;
-          });
-        }
-      }, (authDataAsString) {
-        if (mounted) {
-          setState(() {
-            payload =
-                AuthReqDecryptedPayload.fromJsonString(authDataAsString);
-          });
-        }
       });
-    }
+    });
   }
 
-  void showBottomDialog(AuthReqDecryptedPayload payload) {
-    var screen = AuthDialogScreen(payload: payload);
-    this.payload = null;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      clipBehavior: Clip.hardEdge,
-      builder: (context) {
-        return SizedBox(
-          height: MediaQuery
-              .of(context)
-              .size
-              .height * 0.4,
-          child: screen,
+  void reconnectSockets(HiveAuthSignerData data) async {
+    startSocket(qrScannerAuthReqPayload?.host ?? data.hasWsServer);
+  }
+
+  void handleMessage(String message, HiveAuthSignerData data) async {
+    var ks = await hiveAuthData.pinStorageManager.getKeys(data.mp!);
+    handler.handleMessage(message, ks, qrScannerAuthReqPayload, () {
+      hiveAuthData.setKeyAck(true, data);
+    }, (authDataAsString) {
+      var payload = AuthReqDecryptedPayload.fromJsonString(authDataAsString);
+      hiveAuthData.setActionPayload(payload, data);
+    }, (message) {
+      socket?.sink.add(message);
+    });
+  }
+
+  void showBottomDialog(
+    AuthReqDecryptedPayload payload,
+    HiveAuthSignerData data,
+  ) {
+    Future.delayed(const Duration(milliseconds: 1250), () {
+      var screen = AuthDialogScreen(payload: payload);
+      hiveAuthData.setActionPayload(null, data);
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        clipBehavior: Clip.hardEdge,
+        builder: (context) {
+          return SizedBox(
+            height: MediaQuery.of(context).size.height * 0.65,
+            child: screen,
+          );
+        },
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    var data = Provider.of<HiveAuthSignerData>(context);
+    if (data.socketData.actionPayload != null) {
+      // showBottomDialog(data.socketData.actionPayload!, data);
+    }
+    if (socket == null) {
+      reconnectSockets(data);
+    }
+    return StreamBuilder(
+      stream: socket?.stream,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          var message = snapshot.data as String?;
+          if (message != null) {
+            handleMessage(message, data);
+          }
+        }
+        return Scaffold(
+          appBar: AppBar(
+            centerTitle: false,
+            title: ListTile(
+              leading: Image.asset(
+                'assets/app-icon.png',
+                width: 40,
+                height: 40,
+              ),
+              title: const Text('Auth Signer'),
+              subtitle: const Text('Dashboard'),
+            ),
+            actions: [
+              Icon(
+                Icons.public,
+                color: data.socketData.wasKeyAcknowledged
+                    ? Colors.green
+                    : Colors.grey,
+              ),
+              IconButton(
+                icon: const Icon(Icons.lock),
+                onPressed: () {
+                  hiveAuthData.setKeyAck(false, widget.data);
+                  var screen = PinLockScreen(data: widget.data);
+                  var route = MaterialPageRoute(builder: (c) => screen);
+                  Navigator.of(context).pushReplacement(route);
+                },
+              ),
+            ],
+          ),
+          body: SafeArea(
+            child: _dashboardMenu(data),
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              reconnectSockets(data);
+            },
+            child: const Icon(
+              Icons.refresh,
+              color: Colors.white,
+            ),
+          ),
         );
       },
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    if (payload != null) {
-      showBottomDialog(payload!);
-    }
-    var data = Provider.of<HiveAuthSignerData>(context);
-    if (!didSendInitialSocketRequest) {
-      reconnectSockets(data, null);
-    }
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: false,
-        title: ListTile(
-          leading: Image.asset(
-            'assets/app-icon.png',
-            width: 40,
-            height: 40,
-          ),
-          title: const Text('Auth Signer'),
-          subtitle: const Text('Dashboard'),
-        ),
-        actions: [
-          Icon(
-            Icons.public,
-            color: keyAck ? Colors.green : Colors.grey,
-          ),
-          IconButton(
-            icon: const Icon(Icons.lock),
-            onPressed: () {
-              hiveAuthData.setKeyAck(false, widget.data);
-              var screen = PinLockScreen(data: widget.data);
-              var route = MaterialPageRoute(builder: (c) => screen);
-              Navigator.of(context).pushReplacement(route);
-            },
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: _dashboardMenu(data),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          reconnectSockets(data, null);
-        },
-        child: const Icon(
-          Icons.refresh,
-          color: Colors.white,
-        ),
-      ),
-    );
+  void dispose() {
+    socket?.sink.close();
+    super.dispose();
   }
 }

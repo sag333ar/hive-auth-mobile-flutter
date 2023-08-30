@@ -20,6 +20,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   QRViewController? controller;
   var didSendReply = false;
+  String? scanData;
 
   @override
   void reassemble() {
@@ -31,17 +32,31 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     }
   }
 
+  void delayed() {
+    if (!didSendReply && scanData != null) {
+      setState(() {
+        didSendReply = true;
+        widget.didFinishScan(scanData ?? '');
+        scanData = null;
+        Navigator.of(context).pop();
+      });
+    }
+  }
+
   void _onQRViewCreated(QRViewController controller) {
     this.controller = controller;
     controller.scannedDataStream.listen((scanData) {
-      setState(() {
-        controller.pauseCamera();
-        if (!didSendReply) {
-          didSendReply = true;
-          widget.didFinishScan(scanData.code ?? '');
-        }
-        Navigator.of(context).pop();
-      });
+      controller.pauseCamera();
+      if (mounted) {
+        setState(() {
+          if (this.scanData == null) {
+            this.scanData = scanData.code;
+            Future.delayed(const Duration(milliseconds: 1200), (){
+              delayed();
+            });
+          }
+        });
+      }
     });
   }
 

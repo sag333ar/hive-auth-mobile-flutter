@@ -97,7 +97,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
   }
 
   void navigateToDashboard() {
-    var screen = WelcomeScreen(data: widget.data);
+    var screen = DashboardScreen(data: widget.data);
     var route = MaterialPageRoute(builder: (c) => screen);
     Navigator.of(context).pushReplacement(route);
   }
