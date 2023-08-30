@@ -175,24 +175,26 @@ class _DashboardScreenState extends State<DashboardScreen>
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  void startSocket(String hasWsServer) {
+  void startSocket(String hasWsServer, HiveAuthSignerData data) {
     setState(() {
       if (socket != null) {
         socket?.sink.close();
         socket = null;
       }
-      Future.delayed(const Duration(milliseconds: 1250), () {
-        setState(() {
-          socket = WebSocketChannel.connect(
-            Uri.parse(hasWsServer),
-          );
-        });
-      });
+      socket = WebSocketChannel.connect(
+        Uri.parse(hasWsServer),
+      );
+    });
+    socket?.stream.listen((event) {
+      var string = event as String?;
+      if (string != null) {
+        handleMessage(string, data);
+      }
     });
   }
 
   void reconnectSockets(HiveAuthSignerData data) async {
-    startSocket(qrScannerAuthReqPayload?.host ?? data.hasWsServer);
+    startSocket(qrScannerAuthReqPayload?.host ?? data.hasWsServer, data);
   }
 
   void handleMessage(String message, HiveAuthSignerData data) async {
@@ -233,64 +235,53 @@ class _DashboardScreenState extends State<DashboardScreen>
     super.build(context);
     var data = Provider.of<HiveAuthSignerData>(context);
     if (data.socketData.actionPayload != null) {
-      // showBottomDialog(data.socketData.actionPayload!, data);
+      showBottomDialog(data.socketData.actionPayload!, data);
     }
     if (socket == null) {
       reconnectSockets(data);
     }
-    return StreamBuilder(
-      stream: socket?.stream,
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          var message = snapshot.data as String?;
-          if (message != null) {
-            handleMessage(message, data);
-          }
-        }
-        return Scaffold(
-          appBar: AppBar(
-            centerTitle: false,
-            title: ListTile(
-              leading: Image.asset(
-                'assets/app-icon.png',
-                width: 40,
-                height: 40,
-              ),
-              title: const Text('Auth Signer'),
-              subtitle: const Text('Dashboard'),
-            ),
-            actions: [
-              Icon(
-                Icons.public,
-                color: data.socketData.wasKeyAcknowledged
-                    ? Colors.green
-                    : Colors.grey,
-              ),
-              IconButton(
-                icon: const Icon(Icons.lock),
-                onPressed: () {
-                  hiveAuthData.setKeyAck(false, widget.data);
-                  var screen = PinLockScreen(data: widget.data);
-                  var route = MaterialPageRoute(builder: (c) => screen);
-                  Navigator.of(context).pushReplacement(route);
-                },
-              ),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: false,
+        title: ListTile(
+          leading: Image.asset(
+            'assets/app-icon.png',
+            width: 40,
+            height: 40,
           ),
-          body: SafeArea(
-            child: _dashboardMenu(data),
+          title: const Text('Auth Signer'),
+          subtitle: const Text('Dashboard'),
+        ),
+        actions: [
+          Icon(
+            Icons.public,
+            color: data.socketData.wasKeyAcknowledged
+                ? Colors.green
+                : Colors.grey,
           ),
-          floatingActionButton: FloatingActionButton(
+          IconButton(
+            icon: const Icon(Icons.lock),
             onPressed: () {
-              reconnectSockets(data);
+              hiveAuthData.setKeyAck(false, widget.data);
+              var screen = PinLockScreen(data: widget.data);
+              var route = MaterialPageRoute(builder: (c) => screen);
+              Navigator.of(context).pushReplacement(route);
             },
-            child: const Icon(
-              Icons.refresh,
-              color: Colors.white,
-            ),
           ),
-        );
-      },
+        ],
+      ),
+      body: SafeArea(
+        child: _dashboardMenu(data),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          reconnectSockets(data);
+        },
+        child: const Icon(
+          Icons.refresh,
+          color: Colors.white,
+        ),
+      ),
     );
   }
 
