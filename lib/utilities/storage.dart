@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'package:biometric_storage/biometric_storage.dart';
 import 'package:encryptor/encryptor.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hiveauthsigner/socket/account_auth.dart';
 import 'package:hiveauthsigner/socket/signer_keys.dart';
 
 class HASPinStorageManager {
   final String _appPin = 'app_pin';
   final String _doWeHaveSecurePin = 'do_we_have_secure_pin';
   final String _appKeys = 'app_keys';
+  final String _sessions = "sessions";
   final _storage = const FlutterSecureStorage();
 
   Future<bool> hasBiometrics() async {
@@ -65,5 +67,18 @@ class HASPinStorageManager {
     var string = json.encode(keys);
     var encrypted = Encryptor.encrypt(mp, string);
     await _storage.write(key: _appKeys, value: encrypted);
+  }
+
+  Future<List<AccountAuthModel>> getAuths() async {
+    String value = await _storage.read(key: _sessions) ?? "";
+    if (value.isEmpty) {
+      return [];
+    }
+    return AccountAuthModel.fromRawJson(value);
+  }
+
+  Future<void> updateAuths(List<AccountAuthModel> auths) async {
+    var string = json.encode(auths);
+    await _storage.write(key: _sessions, value: string);
   }
 }

@@ -49,5 +49,7 @@
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use your face-id/touch-id to unlock the app</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Please provide camera access to scan QR codes</string>
 </dict>
 </plist>

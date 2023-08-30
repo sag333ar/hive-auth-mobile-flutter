@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
@@ -5,6 +8,8 @@ import 'package:hiveauthsigner/screens/about_screen.dart';
 import 'package:hiveauthsigner/screens/import_keys.dart';
 import 'package:hiveauthsigner/screens/manage_keys.dart';
 import 'package:hiveauthsigner/screens/pinlock_screen.dart';
+import 'package:hiveauthsigner/screens/qr_scanner.dart';
+import 'package:hiveauthsigner/socket/account_auth.dart';
 import 'package:provider/provider.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -74,11 +79,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _scanQR() {
+  Widget _scanQR(HiveAuthSignerData data) {
     return ListTile(
       leading: const Icon(Icons.qr_code),
       title: const Text("Scan QR Code"),
-      onTap: () async {},
+      onTap: () {
+        var screen = QRScannerScreen(didFinishScan: (scanText) {
+          var text = scanText as String?;
+          if (text != null && text.isNotEmpty && text.contains('has://auth_req/')) {
+            var newText = text.split('has://auth_req/')[1];
+            var decodedBytes = base64.decode(newText);
+            var decodedStr = utf8.decode(decodedBytes);
+            log('Decoded string is - $decodedStr');
+            var payload = AuthReqPayload.fromJsonString(decodedStr);
+            setState(() {
+              reconnectSockets(data, payload);
+            });
+          }
+          // payload.host
+        });
+        var route = MaterialPageRoute(builder: (c) => screen);
+        Navigator.of(context).push(route);
+      },
     );
   }
 
@@ -120,9 +142,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     // defaultItems.add(_viewAccounts());
     defaultItems.add(_manageKeys());
     defaultItems.add(_import());
-    defaultItems.add(_scanQR());
+    defaultItems.add(_scanQR(data));
     defaultItems.add(_about());
-    // defaultItems.add(_settings());
     defaultItems.add(_changeTheme(data));
     defaultItems.add(_lock());
     return Container(
@@ -140,7 +161,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  void reconnectSockets(HiveAuthSignerData data) async {
+  void reconnectSockets(
+    HiveAuthSignerData data,
+    AuthReqPayload? authReqPayload,
+  ) async {
     setState(() {
       didSendInitialSocketRequest = true;
     });
@@ -153,10 +177,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         showMessage('No accounts found to connect');
       }
       setState(() {
-        hiveAuthData.startSocket(data.hasWsServer, ks, () {
+        hiveAuthData.startSocket(
+            authReqPayload?.host ?? data.hasWsServer, ks, authReqPayload, () {
           setState(() {
             keyAck = true;
           });
+        }, (authDataAsString) {
+          log(authDataAsString);
         });
       });
     }
@@ -166,7 +193,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget build(BuildContext context) {
     var data = Provider.of<HiveAuthSignerData>(context);
     if (!didSendInitialSocketRequest) {
-      reconnectSockets(data);
+      reconnectSockets(data, null);
     }
     return Scaffold(
       appBar: AppBar(
@@ -201,7 +228,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          reconnectSockets(data);
+          reconnectSockets(data, null);
         },
         child: const Icon(
           Icons.refresh,

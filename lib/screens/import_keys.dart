@@ -26,7 +26,6 @@ class _ImportKeysScreenState extends State<ImportKeysScreen> {
         label: Text('Hive Username'),
         hintText: 'Enter Hive Username here.',
       ),
-      keyboardType: TextInputType.none,
       onChanged: (value) {
         setState(() {
           hiveUserName = value;
@@ -43,7 +42,6 @@ class _ImportKeysScreenState extends State<ImportKeysScreen> {
         hintText: 'Enter Key (Active / Posting / Memo) here.',
       ),
       obscureText: true,
-      keyboardType: TextInputType.number,
       onChanged: (value) {
         setState(() {
           hiveKey = value;

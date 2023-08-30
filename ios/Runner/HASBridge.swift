@@ -49,6 +49,16 @@ class HASBridge {
                         return
                     }
                 self?.validateHiveKey(accountName: accountName, userKey: userKey, result: result)
+                case "decrypt":
+                    guard
+                        let arguments = call.arguments as? NSDictionary,
+                        let data = arguments ["data"] as? String,
+                        let key = arguments ["key"] as? String
+                    else {
+                        result(FlutterMethodNotImplemented)
+                        return
+                    }
+                    self?.decrypt(data: data, key: key, result: result)
                 default:
                     debugPrint("do nothing")
             }
@@ -80,6 +90,20 @@ class HASBridge {
             return
         }
         hasWeb.validateHiveKey(accountName: accountName, userKey: userKey) { response in
+            result(response)
+        }
+    }
+
+    private func decrypt(
+        data: String,
+        key: String,
+        result: @escaping FlutterResult
+    ) {
+        guard let hasWeb = hasWeb else {
+            result(FlutterError(code: "ERROR", message: "Error setting up HASBridge", details: nil))
+            return
+        }
+        hasWeb.decrypt(data: data, key: key) { response in
             result(response)
         }
     }
