@@ -103,11 +103,11 @@ class SocketHandler {
             log('Error occurred on websocket - $message');
             return;
           case "key_ack":
-            if (handleKeysAck != null) {
-              handleKeysAck();
-            }
             if (keys.isNotEmpty) {
               _handleKeyAck(payload, keys);
+            }
+            if (handleKeysAck != null) {
+              handleKeysAck();
             }
             return;
           case "register_ack":
@@ -118,7 +118,6 @@ class SocketHandler {
             _handleAuthReq(
               message,
               keys,
-              handleKeysAck,
               payload,
               showAuthReqDialog,
             );
@@ -137,7 +136,6 @@ class SocketHandler {
   void _handleAuthReq(
     String message,
     List<SignerKeysModel> newKeys,
-    Function? handleKeysAck,
     Map<String, dynamic> payload,
     Function? showAuthReqDialog,
   ) async {
@@ -170,9 +168,9 @@ class SocketHandler {
     // if the auth_key was not provided by the app, check if we store any non-expired auth_key that can decrypt the auth_req_data
     if (payloadAuthKey == null && accountAuths != null) {
       for (var i = 0; i < accountAuths.auths.length; i++) {
-        var expire = accountAuths.auths[i].ts_expire;
-        var expireDate = DateTime.parse(expire);
-        if (expireDate.compareTo(DateTime.now()) == -1) {
+        var expire = accountAuths.auths[i].expire;
+        var now = DateTime.now().millisecondsSinceEpoch;
+        if (expire > now) {
           final String response = await platform.invokeMethod('decrypt', {
             'data': payloadDataText,
             'key': accountAuths.auths[i].key,

@@ -5,9 +5,13 @@ class AuthDialogScreen extends StatefulWidget {
   const AuthDialogScreen({
     super.key,
     required this.payload,
+    required this.approveTapped,
+    required this.rejectTapped,
   });
 
   final AuthReqDecryptedPayload payload;
+  final Function approveTapped;
+  final Function rejectTapped;
 
   @override
   State<AuthDialogScreen> createState() => _AuthDialogScreenState();
@@ -50,12 +54,16 @@ class _AuthDialogScreenState extends State<AuthDialogScreen> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             FloatingActionButton(
-              onPressed: () => {},
+              onPressed: () {
+                widget.approveTapped();
+              },
               child: const Icon(Icons.check),
             ),
             const SizedBox(width: 40),
             FloatingActionButton(
-              onPressed: () => {},
+              onPressed: () {
+                widget.rejectTapped();
+              },
               child: const Icon(Icons.cancel),
             ),
           ]

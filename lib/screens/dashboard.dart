@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
 import 'package:hiveauthsigner/screens/about_screen.dart';
@@ -11,6 +12,7 @@ import 'package:hiveauthsigner/screens/manage_keys.dart';
 import 'package:hiveauthsigner/screens/pinlock_screen.dart';
 import 'package:hiveauthsigner/screens/qr_scanner.dart';
 import 'package:hiveauthsigner/socket/account_auth.dart';
+import 'package:hiveauthsigner/socket/bridge_response.dart';
 import 'package:hiveauthsigner/socket/socket_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -33,6 +35,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   bool get wantKeepAlive => true;
   var isDarkMode = false;
   WebSocketChannel? socket;
+  var keyAck = false;
 
   // = WebSocketChannel.connect(
   //   Uri.parse('wss://hive-auth.arcange.eu'),
@@ -123,7 +126,9 @@ class _DashboardScreenState extends State<DashboardScreen>
       leading: const Icon(Icons.lock),
       title: const Text("Lock App"),
       onTap: () {
-        hiveAuthData.setKeyAck(false, widget.data);
+        setState(() {
+          keyAck = false;
+        });
         var screen = PinLockScreen(data: widget.data);
         var route = MaterialPageRoute(builder: (c) => screen);
         Navigator.of(context).pushReplacement(route);
@@ -200,10 +205,15 @@ class _DashboardScreenState extends State<DashboardScreen>
   void handleMessage(String message, HiveAuthSignerData data) async {
     var ks = await hiveAuthData.pinStorageManager.getKeys(data.mp!);
     handler.handleMessage(message, ks, qrScannerAuthReqPayload, () {
-      hiveAuthData.setKeyAck(true, data);
+      if (mounted) {
+        setState(() {
+          keyAck = true;
+        });
+      }
     }, (authDataAsString) {
       var payload = AuthReqDecryptedPayload.fromJsonString(authDataAsString);
-      hiveAuthData.setActionPayload(payload, data);
+      // hiveAuthData.setActionPayload(payload, data);
+      showBottomDialog(payload, data);
     }, (message) {
       socket?.sink.add(message);
     });
@@ -213,8 +223,50 @@ class _DashboardScreenState extends State<DashboardScreen>
     AuthReqDecryptedPayload payload,
     HiveAuthSignerData data,
   ) {
-    Future.delayed(const Duration(milliseconds: 1250), () {
-      var screen = AuthDialogScreen(payload: payload);
+    Future.delayed(const Duration(milliseconds: 500), () {
+      var screen = AuthDialogScreen(
+        payload: payload,
+        approveTapped: () async {
+          String? account = qrScannerAuthReqPayload?.account.toLowerCase();
+          if (account == null) return;
+          var ks = await hiveAuthData.pinStorageManager.getKeys(data.mp!);
+          var accountKeys = ks.where((element) => element.name.toLowerCase() == account).firstOrNull;
+          if (accountKeys == null) return;
+          String? currentKey;
+          switch (payload.challenge.keyType.toLowerCase()) {
+            case "posting":
+              currentKey = accountKeys.posting;
+              break;
+            case "active":
+              currentKey = accountKeys.active;
+              break;
+            case "memo":
+              currentKey = accountKeys.memo;
+              break;
+            default:
+              currentKey = null;
+          }
+          if (currentKey == null) return;
+          const platform = MethodChannel('com.hiveauth.hiveauthsigner/bridge');
+          final String signChallengeResponse =
+              await platform.invokeMethod('signChallenge', {
+            'challenge': payload.challenge.challenge,
+            'key': currentKey,
+          });
+          var bridgeResponse =
+          HasBridgeResponse.fromJsonString(signChallengeResponse);
+          if (bridgeResponse.error.isNotEmpty) {
+            return;
+          }
+          if (bridgeResponse.data.isEmpty) {
+            return;
+          }
+          var pubKey = bridgeResponse.data.split("___")[0];
+          var signHex = bridgeResponse.data.split("___")[1];
+          log('Public key is $pubKey, signedHex is $signHex');
+        },
+        rejectTapped: () {},
+      );
       hiveAuthData.setActionPayload(null, data);
       showModalBottomSheet(
         context: context,
@@ -222,7 +274,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         clipBehavior: Clip.hardEdge,
         builder: (context) {
           return SizedBox(
-            height: MediaQuery.of(context).size.height * 0.65,
+            height: MediaQuery.of(context).size.height * 0.45,
             child: screen,
           );
         },
@@ -255,14 +307,15 @@ class _DashboardScreenState extends State<DashboardScreen>
         actions: [
           Icon(
             Icons.public,
-            color: data.socketData.wasKeyAcknowledged
-                ? Colors.green
-                : Colors.grey,
+            color:
+            keyAck ? Colors.green : Colors.grey,
           ),
           IconButton(
             icon: const Icon(Icons.lock),
             onPressed: () {
-              hiveAuthData.setKeyAck(false, widget.data);
+              setState(() {
+                keyAck = false;
+              });
               var screen = PinLockScreen(data: widget.data);
               var route = MaterialPageRoute(builder: (c) => screen);
               Navigator.of(context).pushReplacement(route);

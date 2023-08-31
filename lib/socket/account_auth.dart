@@ -3,36 +3,36 @@ import 'dart:convert';
 class AccountAuth {
   double expire;
   String key;
-  String ts_create;
-  String ts_expire;
-  String? ts_lastused;
-  double? nonce;
+  // String ts_create;
+  // String ts_expire;
+  // String? ts_lastused;
+  // double? nonce;
 
   AccountAuth({
     required this.expire,
     required this.key,
-    required this.ts_create,
-    required this.ts_expire,
-    required this.ts_lastused,
-    required this.nonce,
+    // required this.ts_create,
+    // required this.ts_expire,
+    // required this.ts_lastused,
+    // required this.nonce,
   });
 
   factory AccountAuth.fromJson(Map<String, dynamic> json) => AccountAuth(
         expire: json['expire'],
         key: json['key'],
-        ts_create: json['ts_create'],
-        ts_expire: json['ts_expire'],
-        ts_lastused: json['ts_lastused'],
-        nonce: json['nonce'],
+        // ts_create: json['ts_create'],
+        // ts_expire: json['ts_expire'],
+        // ts_lastused: json['ts_lastused'],
+        // nonce: json['nonce'],
       );
 
   Map<String, dynamic> toJson() => {
         'expire': expire,
         'key': key,
-        'ts_create': ts_create,
-        'ts_expire': ts_expire,
-        'ts_lastused': ts_lastused,
-        'nonce': nonce,
+        // 'ts_create': ts_create,
+        // 'ts_expire': ts_expire,
+        // 'ts_lastused': ts_lastused,
+        // 'nonce': nonce,
       };
 }
 

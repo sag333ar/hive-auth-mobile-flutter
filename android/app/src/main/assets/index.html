@@ -1,27 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HiveAuthSigner</title>
-  </head>
-  <body>HiveAuthSigner</body>
-  <noscript>You need to enable JavaScript to run this app.</noscript>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.1.0/uuidv4.min.js"></script>
-  <script
-          src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"
-          integrity="sha512-E8QSvWZ0eCLGk4km3hxSsNmGWbLtSCSUcewDQPQWZF6pEU8GlT8a5fF32wOl1i8ftdMhssTrF/OhyGWwonTcXA=="
-          crossorigin="anonymous"
-          referrerpolicy="no-referrer"
-  ></script>
-  <script src="https://cdn.jsdelivr.net/npm/@hiveio/hive-js/dist/hive.min.js"></script>
-  <script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HiveAuthSigner</title>
+</head>
+<body>
+HiveAuthSigner
+</body>
+<noscript>You need to enable JavaScript to run this app.</noscript>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.1.0/uuidv4.min.js"></script>
+<script
+        src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"
+        integrity="sha512-E8QSvWZ0eCLGk4km3hxSsNmGWbLtSCSUcewDQPQWZF6pEU8GlT8a5fF32wOl1i8ftdMhssTrF/OhyGWwonTcXA=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+></script>
+<script src="https://cdn.jsdelivr.net/npm/@hiveio/hive-js@2.0.7/dist/hive.min.js"></script>
+<script>
     function getProofOfKey(privateKey, publicKey, memo) {
       const proofOfKey = hive.memo.encode(privateKey, publicKey, `#${memo}`);
       replyToNative({
         type: "getProofOfKey",
         error: "",
         data: proofOfKey,
+      });
+    }
+
+    function decrypt(data, key) {
+      const result = CryptoJS.AES.decrypt(data, key).toString(CryptoJS.enc.Utf8);
+      replyToNative({
+          type: "decrypt",
+          error: "",
+          data: result,
+      });
+    }
+
+    function signChallenge(message, key) {
+      const publicKey = hive.auth.wifToPublic(key);
+      const sigHex = hive.auth.signMessage("sagar", "5KRy3nhxZP2RoaGNsuGqwVpP12mnVjWs3jzJxoWd2KYkGJUYZMp");
+      replyToNative({
+          type: "signChallenge",
+          error: "",
+          data: `${publicKey}___${sigHex}`,
       });
     }
 

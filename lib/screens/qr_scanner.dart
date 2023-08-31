@@ -51,7 +51,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         setState(() {
           if (this.scanData == null) {
             this.scanData = scanData.code;
-            Future.delayed(const Duration(milliseconds: 1200), (){
+            Future.delayed(const Duration(milliseconds: 500), (){
               delayed();
             });
           }

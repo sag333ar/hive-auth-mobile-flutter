@@ -17,6 +17,7 @@ class HASWebViewController: UIViewController {
     var getProofOfKeyHandler: ((String) -> Void)? = nil
     var validateHiveKeyHandler: ((String) -> Void)? = nil
     var decryptHandler: ((String) -> Void)? = nil
+    var signChallengeHandler: ((String) -> Void)? = nil
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -68,6 +69,17 @@ class HASWebViewController: UIViewController {
             self.webView?.evaluateJavaScript("decrypt('\(data)', '\(key)');")
         }
     }
+
+    func signChallenge(
+        challenge: String,
+        key: String,
+        handler: @escaping (String) -> Void
+    ) {
+        signChallengeHandler = handler
+        OperationQueue.main.addOperation {
+            self.webView?.evaluateJavaScript("signChallenge('\(challenge)', '\(key)');")
+        }
+    }
 }
 
 extension HASWebViewController: WKNavigationDelegate {
@@ -95,6 +107,8 @@ extension HASWebViewController: WKScriptMessageHandler {
                 validateHiveKeyHandler?(jsonString)
             case "decrypt":
                 decryptHandler?(jsonString)
+            case "signChallenge":
+                signChallengeHandler?(jsonString)
             default:
                 debugPrint("Do nothing")
         }
