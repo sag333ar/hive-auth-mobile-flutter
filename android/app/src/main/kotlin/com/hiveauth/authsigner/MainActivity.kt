@@ -48,7 +48,7 @@ class MainActivity: FlutterFragmentActivity() {
             } else if (call.method == "decrypt" && data != null && key != null) {
                 webView?.evaluateJavascript("decrypt('$data', '$key');", null)
             } else if (call.method == "encrypt" && data != null && key != null) {
-                webView?.evaluateJavascript("encrypt('$accountName', '$key');", null)
+                webView?.evaluateJavascript("encrypt('$data', '$key');", null)
             } else if (call.method == "signChallenge" && challenge != null && key != null) {
                 webView?.evaluateJavascript("signChallenge('$challenge', '$key');", null)
             }
