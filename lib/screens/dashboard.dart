@@ -323,6 +323,28 @@ class _DashboardScreenState extends State<DashboardScreen>
     };
     var message = json.encode(objectToSend);
     log('Message to send is - $message');
+    var auths = await hiveAuthData.pinStorageManager.getAuths();
+    var accountAuth =
+        auths.where((element) => element.name == account).firstOrNull;
+    var expireValue = authAckData['expire'] as int;
+    var accountAuthValue = AccountAuth(
+      expire: expireValue,
+      key: authKey,
+      app: payload.app.name,
+      ts_create: DateTime.now().toIso8601String(),
+      ts_expire: DateTime.fromMicrosecondsSinceEpoch(expireValue)
+          .toIso8601String(),
+      ts_lastused: DateTime.now().toIso8601String(),
+    );
+    if (accountAuth == null) {
+      auths.add(AccountAuthModel(name: account, auths: [accountAuthValue]));
+    } else {
+      accountAuth.auths.add(accountAuthValue);
+      var others = auths.where((element) => element.name != account).toList();
+      others.add(accountAuth);
+      auths = others;
+    }
+    hiveAuthData.pinStorageManager.updateAuths(auths);
     socket?.sink.add(message);
     setState(() {
       Navigator.of(context).pop();

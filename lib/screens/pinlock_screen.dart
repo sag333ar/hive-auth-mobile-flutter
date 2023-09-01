@@ -223,13 +223,6 @@ class _PinLockScreenState extends State<PinLockScreen> {
           : canWeDoBioScan == false
               ? _noBio()
               : _withBio(),
-      // drawer: DrawerScreen(data: widget.data),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //     hiveAuthData.startSocket(widget.data.hasWsServer);
-      //   },
-      //   child: const Icon(Icons.refresh),
-      // ),
     );
   }
 }

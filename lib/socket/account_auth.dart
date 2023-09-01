@@ -1,37 +1,44 @@
 import 'dart:convert';
 
 class AccountAuth {
-  double expire;
+  int expire;
   String key;
-  // String ts_create;
-  // String ts_expire;
-  // String? ts_lastused;
+  String app;
+  String? ts_create;
+  String? ts_expire;
+  String? ts_lastused;
+
   // double? nonce;
 
   AccountAuth({
     required this.expire,
     required this.key,
-    // required this.ts_create,
-    // required this.ts_expire,
-    // required this.ts_lastused,
+    required this.app,
+    required this.ts_create,
+    required this.ts_expire,
+    required this.ts_lastused,
     // required this.nonce,
   });
 
-  factory AccountAuth.fromJson(Map<String, dynamic> json) => AccountAuth(
+  factory AccountAuth.fromJson(Map<String, dynamic> json) =>
+      AccountAuth(
         expire: json['expire'],
         key: json['key'],
-        // ts_create: json['ts_create'],
-        // ts_expire: json['ts_expire'],
-        // ts_lastused: json['ts_lastused'],
+        app: json['app'],
+        ts_create: json['ts_create'],
+        ts_expire: json['ts_expire'],
+        ts_lastused: json['ts_lastused'],
         // nonce: json['nonce'],
       );
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() =>
+      {
         'expire': expire,
         'key': key,
-        // 'ts_create': ts_create,
-        // 'ts_expire': ts_expire,
-        // 'ts_lastused': ts_lastused,
+        'app': app,
+        'ts_create': ts_create,
+        'ts_expire': ts_expire,
+        'ts_lastused': ts_lastused,
         // 'nonce': nonce,
       };
 }
@@ -62,7 +69,8 @@ class AccountAuthModel {
             .toList(),
       );
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() =>
+      {
         'name': name,
         'auths': auths.map((e) => e.toJson()),
       };
@@ -86,14 +94,16 @@ class AuthReqPayload {
   factory AuthReqPayload.fromJsonString(String jsonString) =>
       AuthReqPayload.fromJson(json.decode(jsonString));
 
-  factory AuthReqPayload.fromJson(Map<String, dynamic> json) => AuthReqPayload(
+  factory AuthReqPayload.fromJson(Map<String, dynamic> json) =>
+      AuthReqPayload(
         account: json["account"],
         uuid: json["uuid"],
         key: json["key"],
         host: json["host"],
       );
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() =>
+      {
         'account': account,
         'uuid': uuid,
         'key': key,
@@ -124,7 +134,8 @@ class AuthReqDecryptedPayloadApp {
         icon: json["icon"],
       );
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() =>
+      {
         'name': name,
         'description': description,
         'icon': icon,
@@ -146,13 +157,14 @@ class AuthReqDecryptedPayloadChallenge {
       AuthReqDecryptedPayloadChallenge.fromJson(json.decode(jsonString));
 
   factory AuthReqDecryptedPayloadChallenge.fromJson(
-          Map<String, dynamic> json) =>
+      Map<String, dynamic> json) =>
       AuthReqDecryptedPayloadChallenge(
         keyType: json["key_type"],
         challenge: json["challenge"],
       );
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() =>
+      {
         'key_type': keyType,
         'challenge': challenge,
       };
@@ -178,8 +190,9 @@ class AuthReqDecryptedPayload {
         challenge: AuthReqDecryptedPayloadChallenge.fromJson(json["challenge"]),
       );
 
-  Map<String, dynamic> toJson() => {
-    'app': app.toJson(),
-    'challenge': challenge.toJson(),
-  };
+  Map<String, dynamic> toJson() =>
+      {
+        'app': app.toJson(),
+        'challenge': challenge.toJson(),
+      };
 }
