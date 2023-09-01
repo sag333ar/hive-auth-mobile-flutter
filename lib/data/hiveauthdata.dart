@@ -122,28 +122,6 @@ class HiveAuthData {
       ),
     );
   }
-
-  // void startSocket(
-  //   String hasWsServer,
-  //   List<SignerKeysModel> newKeys,
-  //   AuthReqPayload? authReqPayload,
-  //   Function? handleKeysAck,
-  //   Function? showAuthReqDialog,
-  // ) {
-  //   socket = WebSocketChannel.connect(
-  //     Uri.parse(hasWsServer),
-  //   );
-  //   socket.stream.listen((message) {
-  //     handler.handleMessage(
-  //       message,
-  //       socket,
-  //       newKeys,
-  //       authReqPayload,
-  //       handleKeysAck,
-  //       showAuthReqDialog,
-  //     );
-  //   });
-  // }
 }
 
 HiveAuthData hiveAuthData = HiveAuthData();

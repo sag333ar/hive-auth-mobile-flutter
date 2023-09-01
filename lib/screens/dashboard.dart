@@ -38,9 +38,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   WebSocketChannel? socket;
   var keyAck = false;
 
-  // = WebSocketChannel.connect(
-  //   Uri.parse('wss://hive-auth.arcange.eu'),
-  // );
   SocketHandler handler = SocketHandler();
   AuthReqPayload? qrScannerAuthReqPayload;
 
@@ -220,6 +217,118 @@ class _DashboardScreenState extends State<DashboardScreen>
     });
   }
 
+  void uponRejectTapped(
+    AuthReqDecryptedPayload payload,
+    HiveAuthSignerData data,
+  ) async {
+    String? account = qrScannerAuthReqPayload?.account.toLowerCase();
+    String? payloadUuid = qrScannerAuthReqPayload?.uuid;
+    String? authKey = qrScannerAuthReqPayload?.key;
+    if (account == null || payloadUuid == null || authKey == null) return;
+    var ks = await hiveAuthData.pinStorageManager.getKeys(data.mp!);
+    var accountKeys = ks
+        .where((element) => element.name.toLowerCase() == account)
+        .firstOrNull;
+    if (accountKeys == null) return;
+    const platform = MethodChannel('com.hiveauth.hiveauthsigner/bridge');
+    final String encryptedData = await platform.invokeMethod('encrypt', {
+      'data': payloadUuid,
+      'key': authKey,
+    });
+    var encryptionResponse = HasBridgeResponse.fromJsonString(encryptedData);
+    var pok = await handler.getProofOfKey(account, payloadUuid, ks);
+    var objectToSend = {
+      'cmd': 'auth_nack',
+      'uuid': payloadUuid,
+      'pok': pok,
+      'data': encryptionResponse.data,
+    };
+    var message = json.encode(objectToSend);
+    log('Message to send is - $message');
+    socket?.sink.add(message);
+    setState(() {
+      Navigator.of(context).pop();
+    });
+  }
+
+  void uponApproveTapped(
+    AuthReqDecryptedPayload payload,
+    HiveAuthSignerData data,
+  ) async {
+    String? account = qrScannerAuthReqPayload?.account.toLowerCase();
+    String? payloadUuid = qrScannerAuthReqPayload?.uuid;
+    String? authKey = qrScannerAuthReqPayload?.key;
+    if (account == null || payloadUuid == null || authKey == null) return;
+    var ks = await hiveAuthData.pinStorageManager.getKeys(data.mp!);
+    var accountKeys = ks
+        .where((element) => element.name.toLowerCase() == account)
+        .firstOrNull;
+    if (accountKeys == null) return;
+    String? currentKey;
+    switch (payload.challenge.keyType.toLowerCase()) {
+      case "posting":
+        currentKey = accountKeys.posting;
+        break;
+      case "active":
+        currentKey = accountKeys.active;
+        break;
+      case "memo":
+        currentKey = accountKeys.memo;
+        break;
+      default:
+        currentKey = null;
+    }
+    if (currentKey == null) return;
+    const platform = MethodChannel('com.hiveauth.hiveauthsigner/bridge');
+    final String signChallengeResponse =
+        await platform.invokeMethod('signChallenge', {
+      'challenge': payload.challenge.challenge,
+      'key': currentKey,
+    });
+    var bridgeResponse =
+        HasBridgeResponse.fromJsonString(signChallengeResponse);
+    if (bridgeResponse.error.isNotEmpty) {
+      return;
+    }
+    if (bridgeResponse.data.isEmpty) {
+      return;
+    }
+    var pubKey = bridgeResponse.data.split("___")[0];
+    var signHex = bridgeResponse.data.split("___")[1];
+    log('Public key is $pubKey, signedHex is $signHex');
+    Map<String, dynamic> authAckData = {};
+    var authTimeout =
+        (int.tryParse(dotenv.env['AUTH_TIMEOUT_DAYS'] ?? "30") ?? 30) *
+            24 *
+            60 *
+            60 *
+            1000;
+    authAckData['expire'] = DateTime.now().microsecondsSinceEpoch + authTimeout;
+    authAckData["challenge"] = {
+      "pubkey": pubKey,
+      "challenge": signHex,
+    };
+    var jsonString = json.encode(authAckData);
+    final String encryptedData = await platform.invokeMethod('encrypt', {
+      'data': jsonString,
+      'key': authKey,
+    });
+    var encryptionResponse = HasBridgeResponse.fromJsonString(encryptedData);
+    var pok = await handler.getProofOfKey(account, payloadUuid, ks);
+    var objectToSend = {
+      "cmd": "auth_ack",
+      "uuid": payloadUuid,
+      "pok": pok,
+      "data": encryptionResponse.data,
+    };
+    var message = json.encode(objectToSend);
+    log('Message to send is - $message');
+    socket?.sink.add(message);
+    setState(() {
+      Navigator.of(context).pop();
+    });
+  }
+
   void showBottomDialog(
     AuthReqDecryptedPayload payload,
     HiveAuthSignerData data,
@@ -227,80 +336,12 @@ class _DashboardScreenState extends State<DashboardScreen>
     Future.delayed(const Duration(milliseconds: 500), () {
       var screen = AuthDialogScreen(
         payload: payload,
-        approveTapped: () async {
-          String? account = qrScannerAuthReqPayload?.account.toLowerCase();
-          String? payloadUuid = qrScannerAuthReqPayload?.uuid;
-          String? authKey = qrScannerAuthReqPayload?.key;
-          if (account == null || payloadUuid == null || authKey == null) return;
-          var ks = await hiveAuthData.pinStorageManager.getKeys(data.mp!);
-          var accountKeys = ks.where((element) => element.name.toLowerCase() == account).firstOrNull;
-          if (accountKeys == null) return;
-          String? currentKey;
-          switch (payload.challenge.keyType.toLowerCase()) {
-            case "posting":
-              currentKey = accountKeys.posting;
-              break;
-            case "active":
-              currentKey = accountKeys.active;
-              break;
-            case "memo":
-              currentKey = accountKeys.memo;
-              break;
-            default:
-              currentKey = null;
-          }
-          if (currentKey == null) return;
-          const platform = MethodChannel('com.hiveauth.hiveauthsigner/bridge');
-          final String signChallengeResponse =
-              await platform.invokeMethod('signChallenge', {
-            'challenge': payload.challenge.challenge,
-            'key': currentKey,
-          });
-          var bridgeResponse =
-          HasBridgeResponse.fromJsonString(signChallengeResponse);
-          if (bridgeResponse.error.isNotEmpty) {
-            return;
-          }
-          if (bridgeResponse.data.isEmpty) {
-            return;
-          }
-          var pubKey = bridgeResponse.data.split("___")[0];
-          var signHex = bridgeResponse.data.split("___")[1];
-          log('Public key is $pubKey, signedHex is $signHex');
-          Map<String, dynamic> authAckData = {};
-          var authTimeout =
-              (int.tryParse(dotenv.env['AUTH_TIMEOUT_DAYS'] ?? "30") ?? 30) *
-                  24 *
-                  60 *
-                  60 *
-                  1000;
-          authAckData['expire'] =
-              DateTime.now().microsecondsSinceEpoch + authTimeout;
-          authAckData["challenge"] = {
-            "pubkey": pubKey,
-            "challenge": signHex,
-          };
-          var jsonString = json.encode(authAckData);
-          final String encryptedData = await platform.invokeMethod('encrypt', {
-            'data': jsonString,
-            'key': authKey,
-          });
-          var encryptionResponse = HasBridgeResponse.fromJsonString(encryptedData);
-          var pok = await handler.getProofOfKey(account, payloadUuid, ks);
-          var objectToSend = {
-            "cmd": "auth_ack",
-            "uuid": payloadUuid,
-            "pok": pok,
-            "data": encryptionResponse.data,
-          };
-          var message = json.encode(objectToSend);
-          log('Message to send is - $message');
-          socket?.sink.add(message);
-          setState(() {
-            Navigator.of(context).pop();
-          });
+        approveTapped: () {
+          uponApproveTapped(payload, data);
         },
-        rejectTapped: () {},
+        rejectTapped: () {
+          uponRejectTapped(payload, data);
+        },
       );
       showModalBottomSheet(
         context: context,
@@ -341,8 +382,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         actions: [
           Icon(
             Icons.public,
-            color:
-            keyAck ? Colors.green : Colors.grey,
+            color: keyAck ? Colors.green : Colors.grey,
           ),
           IconButton(
             icon: const Icon(Icons.lock),
