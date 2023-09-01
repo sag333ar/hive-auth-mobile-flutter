@@ -37,9 +37,23 @@ class MainActivity: FlutterActivity() {
             this.result = result
             val publicKey = call.argument<String?>("publicKey")
             val privateKey = call.argument<String?>("privateKey")
+            val accountName = call.argument<String?>("accountName")
+            val data = call.argument<String?>("data")
+            val key = call.argument<String?>("key")
+            val challenge = call.argument<String?>("challenge")
+            val userKey = call.argument<String?>("userKey")
+
             val memo = call.argument<String>("memo")
             if (call.method == "getProofOfKey" && publicKey != null && privateKey != null && memo != null) {
                 webView?.evaluateJavascript("getProofOfKey('$privateKey', '$publicKey', '$memo');", null)
+            } else if (call.method == "validateHiveKey" && accountName != null && userKey != null) {
+                webView?.evaluateJavascript("validateHiveKey('$accountName', '$userKey');", null)
+            } else if (call.method == "decrypt" && data != null && key != null) {
+                webView?.evaluateJavascript("decrypt('$accountName', '$key');", null)
+            } else if (call.method == "encrypt" && data != null && key != null) {
+                webView?.evaluateJavascript("encrypt('$accountName', '$key');", null)
+            } else if (call.method == "signChallenge" && challenge != null && key != null) {
+                webView?.evaluateJavascript("signChallenge('$challenge', '$key');", null)
             }
         }
     }
@@ -90,6 +104,18 @@ class WebAppInterface(private val mContext: Context) {
             JSBridgeAction.GET_PROOF_OF_KEY.value -> {
                 main.result?.success(message)
             }
+            JSBridgeAction.VALIDATE_HIVE_KEY.value -> {
+                main.result?.success(message)
+            }
+            JSBridgeAction.ENCRYPT.value -> {
+                main.result?.success(message)
+            }
+            JSBridgeAction.DECRYPT.value -> {
+                main.result?.success(message)
+            }
+            JSBridgeAction.SIGN_CHALLENGE.value -> {
+                main.result?.success(message)
+            }
         }
     }
 }
@@ -102,5 +128,9 @@ data class JSEvent(
 
 enum class JSBridgeAction(val value: String) {
     GET_PROOF_OF_KEY("getProofOfKey"),
+    VALIDATE_HIVE_KEY("validateHiveKey"),
+    ENCRYPT("encrypt"),
+    DECRYPT("decrypt"),
+    SIGN_CHALLENGE("signChallenge"),
 }
 
