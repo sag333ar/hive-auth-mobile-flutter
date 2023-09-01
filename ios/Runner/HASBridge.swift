@@ -59,6 +59,16 @@ class HASBridge {
                         return
                     }
                     self?.decrypt(data: data, key: key, result: result)
+                case "encrypt":
+                    guard
+                        let arguments = call.arguments as? NSDictionary,
+                        let data = arguments ["data"] as? String,
+                        let key = arguments ["key"] as? String
+                    else {
+                        result(FlutterMethodNotImplemented)
+                        return
+                    }
+                    self?.encrypt(data: data, key: key, result: result)
                 case "signChallenge":
                     guard
                         let arguments = call.arguments as? NSDictionary,
@@ -114,6 +124,20 @@ class HASBridge {
             return
         }
         hasWeb.decrypt(data: data, key: key) { response in
+            result(response)
+        }
+    }
+
+    private func encrypt(
+        data: String,
+        key: String,
+        result: @escaping FlutterResult
+    ) {
+        guard let hasWeb = hasWeb else {
+            result(FlutterError(code: "ERROR", message: "Error setting up HASBridge", details: nil))
+            return
+        }
+        hasWeb.encrypt(data: data, key: key) { response in
             result(response)
         }
     }

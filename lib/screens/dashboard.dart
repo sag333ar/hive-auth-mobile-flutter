@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hiveauthsigner/data/hiveauthdata.dart';
 import 'package:hiveauthsigner/data/hiveauthsignerdata.dart';
 import 'package:hiveauthsigner/screens/about_screen.dart';
@@ -228,7 +229,9 @@ class _DashboardScreenState extends State<DashboardScreen>
         payload: payload,
         approveTapped: () async {
           String? account = qrScannerAuthReqPayload?.account.toLowerCase();
-          if (account == null) return;
+          String? payloadUuid = qrScannerAuthReqPayload?.uuid;
+          String? authKey = qrScannerAuthReqPayload?.key;
+          if (account == null || payloadUuid == null || authKey == null) return;
           var ks = await hiveAuthData.pinStorageManager.getKeys(data.mp!);
           var accountKeys = ks.where((element) => element.name.toLowerCase() == account).firstOrNull;
           if (accountKeys == null) return;
@@ -264,10 +267,41 @@ class _DashboardScreenState extends State<DashboardScreen>
           var pubKey = bridgeResponse.data.split("___")[0];
           var signHex = bridgeResponse.data.split("___")[1];
           log('Public key is $pubKey, signedHex is $signHex');
+          Map<String, dynamic> authAckData = {};
+          var authTimeout =
+              (int.tryParse(dotenv.env['AUTH_TIMEOUT_DAYS'] ?? "30") ?? 30) *
+                  24 *
+                  60 *
+                  60 *
+                  1000;
+          authAckData['expire'] =
+              DateTime.now().microsecondsSinceEpoch + authTimeout;
+          authAckData["challenge"] = {
+            "pubkey": pubKey,
+            "challenge": signHex,
+          };
+          var jsonString = json.encode(authAckData);
+          final String encryptedData = await platform.invokeMethod('encrypt', {
+            'data': jsonString,
+            'key': authKey,
+          });
+          var encryptionResponse = HasBridgeResponse.fromJsonString(encryptedData);
+          var pok = await handler.getProofOfKey(account, payloadUuid, ks);
+          var objectToSend = {
+            "cmd": "auth_ack",
+            "uuid": payloadUuid,
+            "pok": pok,
+            "data": encryptionResponse.data,
+          };
+          var message = json.encode(objectToSend);
+          log('Message to send is - $message');
+          socket?.sink.add(message);
+          setState(() {
+            Navigator.of(context).pop();
+          });
         },
         rejectTapped: () {},
       );
-      hiveAuthData.setActionPayload(null, data);
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,

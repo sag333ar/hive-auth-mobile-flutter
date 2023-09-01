@@ -17,6 +17,7 @@ class HASWebViewController: UIViewController {
     var getProofOfKeyHandler: ((String) -> Void)? = nil
     var validateHiveKeyHandler: ((String) -> Void)? = nil
     var decryptHandler: ((String) -> Void)? = nil
+    var encryptHandler: ((String) -> Void)? = nil
     var signChallengeHandler: ((String) -> Void)? = nil
 
     override func viewDidLoad() {
@@ -70,6 +71,17 @@ class HASWebViewController: UIViewController {
         }
     }
 
+    func encrypt(
+        data: String,
+        key: String,
+        handler: @escaping (String) -> Void
+    ) {
+        encryptHandler = handler
+        OperationQueue.main.addOperation {
+            self.webView?.evaluateJavaScript("encrypt('\(data)', '\(key)');")
+        }
+    }
+
     func signChallenge(
         challenge: String,
         key: String,
@@ -107,6 +119,8 @@ extension HASWebViewController: WKScriptMessageHandler {
                 validateHiveKeyHandler?(jsonString)
             case "decrypt":
                 decryptHandler?(jsonString)
+            case "encrypt":
+                encryptHandler?(jsonString)
             case "signChallenge":
                 signChallengeHandler?(jsonString)
             default:
