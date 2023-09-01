@@ -28,21 +28,32 @@ HiveAuthSigner
     }
 
     function decrypt(data, key) {
-      const result = CryptoJS.AES.decrypt(data, key).toString(CryptoJS.enc.Utf8);
+      const result = CryptoJS.AES.decrypt(data, key).toString(
+        CryptoJS.enc.Utf8
+      );
       replyToNative({
-          type: "decrypt",
-          error: "",
-          data: result,
+        type: "decrypt",
+        error: "",
+        data: result,
+      });
+    }
+
+    function encrypt(data, key) {
+      const result = CryptoJS.AES.encrypt(data, key).toString();
+      replyToNative({
+        type: "encrypt",
+        error: "",
+        data: result,
       });
     }
 
     function signChallenge(message, key) {
       const publicKey = hive.auth.wifToPublic(key);
-      const sigHex = hive.auth.signMessage("sagar", "5KRy3nhxZP2RoaGNsuGqwVpP12mnVjWs3jzJxoWd2KYkGJUYZMp");
+      const sigHex = hive.auth.signMessage(message, key);
       replyToNative({
-          type: "signChallenge",
-          error: "",
-          data: `${publicKey}___${sigHex}`,
+        type: "signChallenge",
+        error: "",
+        data: `${publicKey}___${sigHex}`,
       });
     }
 
@@ -60,7 +71,13 @@ HiveAuthSigner
           const isItActiveKey = hive.auth.wifIsValid(userKey, publicActive);
           const isItMemoKey = hive.auth.wifIsValid(userKey, publicMemo);
           const noKey = !isItPostingKey && !isItActiveKey && !isItMemoKey;
-          const keyType = isItPostingKey ? 'posting' : isItActiveKey ? 'active' : isItMemoKey ? 'memo' : '';
+          const keyType = isItPostingKey
+            ? "posting"
+            : isItActiveKey
+            ? "active"
+            : isItMemoKey
+            ? "memo"
+            : "";
           replyToNative({
             type: "validateHiveKey",
             error: noKey ? "Invalid Key" : "",
