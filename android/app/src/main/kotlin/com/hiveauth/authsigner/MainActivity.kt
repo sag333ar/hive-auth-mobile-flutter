@@ -1,13 +1,9 @@
 package com.hiveauth.authsigner
 
-import io.flutter.embedding.android.FlutterActivity
-
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
@@ -21,8 +17,9 @@ import androidx.webkit.WebViewAssetLoader
 import com.google.gson.Gson
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity: FlutterActivity() {
+class MainActivity: FlutterFragmentActivity() {
     var webView: WebView? = null
     var result: MethodChannel.Result? = null
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
@@ -49,7 +46,7 @@ class MainActivity: FlutterActivity() {
             } else if (call.method == "validateHiveKey" && accountName != null && userKey != null) {
                 webView?.evaluateJavascript("validateHiveKey('$accountName', '$userKey');", null)
             } else if (call.method == "decrypt" && data != null && key != null) {
-                webView?.evaluateJavascript("decrypt('$accountName', '$key');", null)
+                webView?.evaluateJavascript("decrypt('$data', '$key');", null)
             } else if (call.method == "encrypt" && data != null && key != null) {
                 webView?.evaluateJavascript("encrypt('$accountName', '$key');", null)
             } else if (call.method == "signChallenge" && challenge != null && key != null) {
@@ -61,8 +58,8 @@ class MainActivity: FlutterActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupView() {
         val params = FrameLayout.LayoutParams(0, 0)
-        webView = WebView(activity)
-        val decorView = activity.window.decorView as FrameLayout
+        webView = WebView(this)
+        val decorView = this.window.decorView as FrameLayout
         decorView.addView(webView, params)
         webView?.visibility = View.GONE
         webView?.settings?.javaScriptEnabled = true
